@@ -4,11 +4,12 @@
 ## Equipo de Desarrollo
 | Nombre Completo | Carné | Rol / Módulo Asignado |
 | :--- | :--- | :--- |
-| **Nelson Eduardo Molina Hernández** | MH252987 | Módulo 1 (Gestión Académica) & Seguridad (JWT) |
-| **Carlos Eduardo Rodriguez Montoya** | RM252980 | Módulo 2 (Clientes) & Módulo 3 (Inscripciones) |
-| **Francisco Miguel Serrano Orellana** | SO252952 | Módulo 4 (Cotizaciones) & Módulo 8 (Pagos) |
-| **Johanna Marisela Portillo Anzora** | PA252991 | Módulo 5 (Alquiler de Espacios) & Módulo 6 (Catering)[cite: 1] |
-| **Marcelo Augusto Zelaya Colocho** | MA252948 | Módulo 7 (Agenda Institucional) & Pruebas Unitarias[cite: 1] |
+## Integrantes del Equipo y Responsabilidades
+* **Carlos Eduardo Rodriguez Montoya** (RM252980) — *Líder de equipo y desarrollo de servicios backend*
+* **Nelson Eduardo Molina Hernández** (MH252987) — *Desarrollo de controladores y APIs REST*
+* **Francisco Miguel Serrano Orellana** (SO252952) — *Diseño del esquema de base de datos y persistencia JPA*
+* **Johanna Marisela Portillo Anzora** (PA252991) — *Implementación de seguridad y validaciones*
+* **Marcelo Augusto Zelaya Colocho** (MA252948) — *Pruebas unitarias y documentación con Swagger*
 
 ---
 
