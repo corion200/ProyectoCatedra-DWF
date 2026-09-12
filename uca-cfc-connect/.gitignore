@@ -1,0 +1,12 @@
+# Build
+target/
+*.class
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# SO (Linux/Windows mixto)
+.DS_Store
+Thumbs.db
