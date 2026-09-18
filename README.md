@@ -47,7 +47,7 @@ El sistema centraliza y automatiza los procesos académicos y administrativos de
 
 ### Requisitos Previos
 * JDK 21 instalado[cite: 3].
-* Servidor MySQL o PostgreSQL[cite: 3].
+* Servidor MySQL[cite: 3].
 * Git.
 
 ### Pasos para Ejecutar
