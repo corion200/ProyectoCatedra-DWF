@@ -214,6 +214,7 @@ CREATE TABLE catering_servicios (
     precio_por_persona  DECIMAL(10,2)   NOT NULL,
     costo_total         DECIMAL(12,2)   NOT NULL,
     estado              VARCHAR(20)     NOT NULL DEFAULT 'PENDIENTE',
+    observaciones       VARCHAR(500),
     fecha_creacion      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     fecha_actualizacion DATETIME        ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_cat_cliente FOREIGN KEY (cliente_id) REFERENCES clientes (id),

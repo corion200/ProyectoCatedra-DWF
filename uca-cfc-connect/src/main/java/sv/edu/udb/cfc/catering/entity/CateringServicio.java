@@ -74,6 +74,9 @@ public class CateringServicio {
     @Column(name = "costo_total", nullable = false, precision = 12, scale = 2)
     private BigDecimal costoTotal;
 
+    @Column(length = 500)
+    private String observaciones;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     @Builder.Default
