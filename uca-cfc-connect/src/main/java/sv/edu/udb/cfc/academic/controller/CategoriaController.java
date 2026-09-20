@@ -25,7 +25,7 @@ import sv.edu.udb.cfc.academic.dto.CategoriaResponseDTO;
 import sv.edu.udb.cfc.academic.dto.CategoriaUpdateDTO;
 import sv.edu.udb.cfc.academic.service.CategoriaService;
 
-@Tag(name = "Categorías", description = "Catálogo de categorías académicas del CFC")
+@Tag(name = "Categorías", description = "Gestión del catálogo de categorías académicas del CFC")
 @RestController
 @RequestMapping("/api/v1/categorias")
 @RequiredArgsConstructor
@@ -33,15 +33,15 @@ public class CategoriaController {
 
     private final CategoriaService categoriaService;
 
-    @Operation(summary = "Registra una nueva categoría")
-    @ApiResponse(responseCode = "201", description = "Categoría creada")
-    @ApiResponse(responseCode = "409", description = "Nombre duplicado")
+    @Operation(summary = "Crea una nueva categoría")
+    @ApiResponse(responseCode = "201", description = "Categoría creada correctamente")
+    @ApiResponse(responseCode = "409", description = "Ya existe una categoría con ese nombre")
     @PostMapping
     public ResponseEntity<CategoriaResponseDTO> crear(@Valid @RequestBody CategoriaCreateDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(categoriaService.crear(dto));
     }
 
-    @Operation(summary = "Lista categorías con filtros y paginación")
+    @Operation(summary = "Consulta categorías con filtros opcionales y paginación")
     @GetMapping
     public Page<CategoriaResponseDTO> listar(
             @RequestParam(required = false) String nombre,
@@ -50,22 +50,22 @@ public class CategoriaController {
         return categoriaService.listar(nombre, activo, pageable);
     }
 
-    @Operation(summary = "Obtiene una categoría por id")
-    @ApiResponse(responseCode = "404", description = "Categoría no encontrada")
+    @Operation(summary = "Busca una categoría por su identificador")
+    @ApiResponse(responseCode = "404", description = "No se encontró la categoría solicitada")
     @GetMapping("/{id}")
     public CategoriaResponseDTO obtenerPorId(@PathVariable Long id) {
         return categoriaService.obtenerPorId(id);
     }
 
-    @Operation(summary = "Actualiza una categoría existente")
+    @Operation(summary = "Modifica los datos de una categoría existente")
     @PutMapping("/{id}")
     public CategoriaResponseDTO actualizar(@PathVariable Long id,
                                            @Valid @RequestBody CategoriaUpdateDTO dto) {
         return categoriaService.actualizar(id, dto);
     }
 
-    @Operation(summary = "Elimina una categoría (rechazada si tiene cursos asociados)")
-    @ApiResponse(responseCode = "204", description = "Categoría eliminada/desactivada")
+    @Operation(summary = "Elimina una categoría (no se permite si tiene cursos asociados)")
+    @ApiResponse(responseCode = "204", description = "Categoría eliminada o desactivada correctamente")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         categoriaService.eliminar(id);

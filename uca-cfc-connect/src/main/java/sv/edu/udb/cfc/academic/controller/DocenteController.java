@@ -25,7 +25,7 @@ import sv.edu.udb.cfc.academic.dto.DocenteResponseDTO;
 import sv.edu.udb.cfc.academic.dto.DocenteUpdateDTO;
 import sv.edu.udb.cfc.academic.service.DocenteService;
 
-@Tag(name = "Docentes", description = "Gestión de docentes del CFC")
+@Tag(name = "Docentes", description = "Administración de los docentes del CFC")
 @RestController
 @RequestMapping("/api/v1/docentes")
 @RequiredArgsConstructor
@@ -33,15 +33,15 @@ public class DocenteController {
 
     private final DocenteService docenteService;
 
-    @Operation(summary = "Registra un nuevo docente")
-    @ApiResponse(responseCode = "201", description = "Docente creado")
-    @ApiResponse(responseCode = "409", description = "DUI o correo duplicado")
+    @Operation(summary = "Crea un nuevo docente")
+    @ApiResponse(responseCode = "201", description = "Docente creado correctamente")
+    @ApiResponse(responseCode = "409", description = "El DUI o el correo ya están registrados")
     @PostMapping
     public ResponseEntity<DocenteResponseDTO> crear(@Valid @RequestBody DocenteCreateDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(docenteService.crear(dto));
     }
 
-    @Operation(summary = "Lista docentes (búsqueda por nombre/apellido con 'busqueda')")
+    @Operation(summary = "Consulta docentes con paginación (el parámetro 'busqueda' filtra por nombre o apellido)")
     @GetMapping
     public Page<DocenteResponseDTO> listar(
             @RequestParam(required = false) String busqueda,
@@ -50,21 +50,21 @@ public class DocenteController {
         return docenteService.listar(busqueda, activo, pageable);
     }
 
-    @Operation(summary = "Obtiene un docente por id")
+    @Operation(summary = "Busca un docente por su identificador")
     @GetMapping("/{id}")
     public DocenteResponseDTO obtenerPorId(@PathVariable Long id) {
         return docenteService.obtenerPorId(id);
     }
 
-    @Operation(summary = "Actualiza un docente existente")
+    @Operation(summary = "Modifica los datos de un docente existente")
     @PutMapping("/{id}")
     public DocenteResponseDTO actualizar(@PathVariable Long id,
                                          @Valid @RequestBody DocenteUpdateDTO dto) {
         return docenteService.actualizar(id, dto);
     }
 
-    @Operation(summary = "Desactiva un docente (soft delete)")
-    @ApiResponse(responseCode = "204", description = "Docente desactivado")
+    @Operation(summary = "Desactiva un docente (borrado lógico)")
+    @ApiResponse(responseCode = "204", description = "Docente desactivado correctamente")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         docenteService.eliminar(id);
