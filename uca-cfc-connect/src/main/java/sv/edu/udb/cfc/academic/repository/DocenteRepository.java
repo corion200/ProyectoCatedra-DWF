@@ -17,7 +17,7 @@ public interface DocenteRepository extends JpaRepository<Docente, Long> {
 
     Page<Docente> findByActivoTrue(Pageable pageable);
 
-    /** Búsqueda por nombre O apellido (el mismo texto en ambos campos). */
+    /** Busca docentes cuyo nombre O apellido contenga el texto indicado (se usa el mismo valor para ambos campos). */
     Page<Docente> findByNombresContainingIgnoreCaseOrApellidosContainingIgnoreCase(
             String nombres, String apellidos, Pageable pageable);
 }
