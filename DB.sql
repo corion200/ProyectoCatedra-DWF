@@ -24,6 +24,7 @@ CREATE TABLE usuarios (
     password       VARCHAR(255) NOT NULL,
     nombre         VARCHAR(200) NOT NULL,
     activo         BOOLEAN      NOT NULL DEFAULT TRUE,
+    password_temporal BOOLEAN NOT NULL DEFAULT FALSE,
     rol_id         BIGINT       NOT NULL,
     fecha_creacion DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT uq_usuarios_correo UNIQUE (correo),
