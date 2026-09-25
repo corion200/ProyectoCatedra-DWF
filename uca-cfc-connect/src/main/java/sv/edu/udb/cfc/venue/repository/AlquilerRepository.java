@@ -18,6 +18,8 @@ public interface AlquilerRepository extends JpaRepository<Alquiler, Long>, JpaSp
      * Reservas ACTIVAS de un espacio en una fecha → base para detectar
      * solapamiento de horarios (se valida en el servicio comparando horas).
      */
+    List<Alquiler> findByFechaEventoAndEstadoNot(LocalDate fechaEvento, EstadoAlquiler estado);
+
     List<Alquiler> findByEspacioIdAndFechaEventoAndEstadoIn(
             Long espacioId, LocalDate fechaEvento, Collection<EstadoAlquiler> estados);
 

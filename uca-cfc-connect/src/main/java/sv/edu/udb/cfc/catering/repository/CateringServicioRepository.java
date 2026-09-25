@@ -8,6 +8,7 @@ import sv.edu.udb.cfc.catering.entity.CateringServicio;
 import sv.edu.udb.cfc.catering.enums.EstadoCatering;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public interface CateringServicioRepository extends JpaRepository<CateringServicio, Long>, JpaSpecificationExecutor<CateringServicio> {
     boolean existsByCodigoIgnoreCase(String codigo);
@@ -16,4 +17,6 @@ public interface CateringServicioRepository extends JpaRepository<CateringServic
 
     /** Agenda de entregas de un día (para cocina/logística). */
     Page<CateringServicio> findByFechaEvento(LocalDate fechaEvento, Pageable pageable);
+
+    List<CateringServicio> findByFechaEventoAndEstadoNot(LocalDate fechaEvento, EstadoCatering estado);
 }
