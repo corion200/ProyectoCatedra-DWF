@@ -56,6 +56,8 @@ El sistema centraliza y automatiza los procesos académicos y administrativos de
    git clone [https://github.com/corion200/ProyectoCatedra-DWF.git](https://github.com/corion200/ProyectoCatedra-DWF.git)
    cd ProyectoCatedra-DWF
 
+---
+
 ### Configuración de la Base de Datos
 
 El sistema usa **MySQL** (probado con XAMPP) y el esquema se crea con el script `DB.sql` incluido en la raíz del repositorio. Hibernate está configurado en modo `ddl-auto=none`, por lo que **no** crea ni modifica tablas automáticamente — el script SQL es la única fuente de verdad del esquema.
@@ -80,3 +82,27 @@ También puedes editarlas directamente en `src/main/resources/application.proper
    spring.datasource.password=${DB_PASSWORD:}
 ```
 4. Verifica que MySQL esté escuchando en el puerto por defecto `3306`.
+
+---
+
+### Instrucciones de Ejecución
+
+**Opción 1: Desde IntelliJ IDEA**
+1. Abre el proyecto en IntelliJ (`File → Open` y selecciona la carpeta `uca-cfc-connect`).
+2. Espera a que IntelliJ descargue las dependencias de Maven (aparece una barra de progreso abajo).
+3. Busca la clase principal, la que tiene el método `main` (normalmente termina en `Application.java`, ej. `UcaCfcConnectApplication.java`).
+4. Haz clic en el botón ▶️ (Run) que aparece junto a esa clase, o clic derecho sobre el archivo → `Run`.
+5. Espera a que la consola muestre algo como `Started UcaCfcConnectApplication in X seconds`.
+
+**Opción 2: Desde la terminal con Maven**
+```bash
+cd uca-cfc-connect
+mvn spring-boot:run
+```
+
+**Verificar que quedó levantado**
+- La aplicación corre en: `http://localhost:8080`
+- Documentación interactiva de la API (Swagger): `http://localhost:8080/swagger-ui.html`
+- Interfaz web (login y módulos): `http://localhost:8080/index.html`
+
+**Requisito previo:** el servidor MySQL debe estar corriendo y la base de datos `uca_cfc_db` ya debe existir (ver sección "Configuración de la Base de Datos" arriba), de lo contrario la aplicación falla al iniciar por no poder conectarse.
