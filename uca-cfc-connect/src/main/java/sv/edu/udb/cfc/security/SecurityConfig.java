@@ -25,11 +25,13 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
+    /**  ESTE es el bean que faltaba: encripta/valida contraseñas con BCrypt. */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    /** Y este: el orquestador de autenticación que usa AuthService.login(). */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
@@ -41,11 +43,12 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Público: autenticación + documentación
+                        .requestMatchers("/", "/index.html").permitAll()
+                        .requestMatchers(org.springframework.boot.autoconfigure.security.servlet.PathRequest.toStaticResources().atCommonLocations()).permitAll()
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html",
                                 "/v3/api-docs/**", "/api-docs/**").permitAll()
-                        // Configuración del sistema (catálogos): solo ADMIN escribe
+                        // Catálogos: solo ADMIN escribe
                         .requestMatchers(HttpMethod.POST, "/api/v1/cursos/**", "/api/v1/categorias/**",
                                 "/api/v1/modalidades/**", "/api/v1/docentes/**",
                                 "/api/v1/espacios/**").hasRole("ADMIN")
@@ -55,13 +58,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/cursos/**", "/api/v1/categorias/**",
                                 "/api/v1/modalidades/**", "/api/v1/docentes/**",
                                 "/api/v1/espacios/**").hasRole("ADMIN")
-                        // Operación diaria: recepcionista (RF del enunciado)
+                        // Operación diaria: recepcionista
                         .requestMatchers("/api/v1/inscripciones/**", "/api/v1/clientes/**",
                                 "/api/v1/cotizaciones/**", "/api/v1/alquileres/**",
-                                "/api/v1/caterings/**").hasAnyRole("ADMIN", "RECEPCIONISTA")
-                        // Financiero: contabilidad (RF10, RF15)
+                                "/api/v1/caterings/**", "/api/v1/agenda/**").hasAnyRole("ADMIN", "RECEPCIONISTA")
+                        // Financiero: contabilidad
                         .requestMatchers("/api/v1/pagos/**").hasAnyRole("ADMIN", "CONTABILIDAD")
-                        // Consultas: cualquier usuario autenticado (incluye CLIENTE)
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
