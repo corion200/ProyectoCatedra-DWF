@@ -40,6 +40,11 @@ public class Usuario {
     @Column(nullable = false)
     private Boolean activo = true;
 
+    /** true = la contraseña fue generada por el sistema y DEBE cambiarse en el próximo login. */
+    @Builder.Default
+    @Column(name = "password_temporal", nullable = false)
+    private Boolean passwordTemporal = false;
+
     @ManyToOne(fetch = FetchType.EAGER, optional = false)   // EAGER: el filtro lo necesita en cada request
     @JoinColumn(name = "rol_id", nullable = false)
     private Rol rol;
