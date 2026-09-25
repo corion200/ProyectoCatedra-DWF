@@ -5,13 +5,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import sv.edu.udb.cfc.security.dto.CambiarPasswordDTO;
+import sv.edu.udb.cfc.security.dto.CrearUsuarioDTO;
 import sv.edu.udb.cfc.security.dto.LoginRequestDTO;
-import sv.edu.udb.cfc.security.dto.RegistroUsuarioDTO;
 import sv.edu.udb.cfc.security.dto.TokenResponseDTO;
+import sv.edu.udb.cfc.security.dto.UsuarioResponseDTO;
 import sv.edu.udb.cfc.security.entity.Rol;
 import sv.edu.udb.cfc.security.entity.Usuario;
 import sv.edu.udb.cfc.security.repository.RolRepository;
@@ -19,7 +22,8 @@ import sv.edu.udb.cfc.security.repository.UsuarioRepository;
 import sv.edu.udb.cfc.shared.exception.BusinessException;
 import sv.edu.udb.cfc.shared.exception.ResourceNotFoundException;
 
-import java.util.UUID;
+import java.security.SecureRandom;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +35,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final CustomUserDetailsService userDetailsService;
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     public TokenResponseDTO login(LoginRequestDTO dto) {
         Authentication auth = authenticationManager.authenticate(
@@ -39,39 +44,67 @@ public class AuthService {
         Usuario usuario = usuarioRepository.findByCorreo(userDetails.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario", userDetails.getUsername()));
         return new TokenResponseDTO(jwtService.generarToken(userDetails), "Bearer",
-                usuario.getCorreo(), usuario.getRol().getNombre());
+                usuario.getCorreo(), usuario.getRol().getNombre(), usuario.getPasswordTemporal());
     }
 
+    /** ADMIN crea usuarios de cualquier rol; RECEPCIONISTA solo puede crear CLIENTE. */
     @Transactional
-    public TokenResponseDTO registro(RegistroUsuarioDTO dto) {
-        if (usuarioRepository.existsByCorreoIgnoreCase(dto.correo().trim().toLowerCase())) {
-            throw new BusinessException("Ya existe un usuario con el correo: " + dto.correo());
+    public UsuarioResponseDTO crearUsuario(CrearUsuarioDTO dto, Authentication llamador) {
+        String correo = dto.correo().trim().toLowerCase();
+        if (usuarioRepository.existsByCorreoIgnoreCase(correo)) {
+            throw new BusinessException("Ya existe un usuario con el correo: " + correo);
         }
-        // REGLA: el registro público crea SIEMPRE rol CLIENTE (nunca un rol administrativo)
-        Rol rolCliente = rolRepository.findByNombre("CLIENTE")
-                .orElseThrow(() -> new ResourceNotFoundException("Rol", "CLIENTE"));
+        String rolSolicitado = dto.rol().trim().toUpperCase();
+        boolean esAdmin = llamador.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
+        if (!esAdmin && !"CLIENTE".equals(rolSolicitado)) {
+            throw new BusinessException("Solo un ADMIN puede crear usuarios con roles administrativos",
+                    HttpStatus.FORBIDDEN);
+        }
+        Rol rol = rolRepository.findByNombre(rolSolicitado)
+                .orElseThrow(() -> new ResourceNotFoundException("Rol", rolSolicitado));
+        String temporal = generarPasswordTemporal();
         Usuario usuario = usuarioRepository.save(Usuario.builder()
-                .nombre(dto.nombre().trim())
-                .correo(dto.correo().trim().toLowerCase())
-                .password(passwordEncoder.encode(dto.password()))
-                .rol(rolCliente)
-                .build());
-        UserDetails userDetails = userDetailsService.loadUserByUsername(usuario.getCorreo());
-        return new TokenResponseDTO(jwtService.generarToken(userDetails), "Bearer",
-                usuario.getCorreo(), usuario.getRol().getNombre());
+                .nombre(dto.nombre().trim()).correo(correo)
+                .password(passwordEncoder.encode(temporal))
+                .passwordTemporal(true)      // ⭐ obliga al cambio en el próximo login
+                .rol(rol).build());
+        System.out.println("[CFC] Contraseña temporal para " + correo + ": " + temporal
+                + " (en producción se envía por email)");
+        return UsuarioResponseDTO.from(usuario);
     }
 
-    /**
-     * Recuperación de contraseña (Módulo 9). Simplificación de demo: genera una
-     * contraseña temporal y la devuelve en la respuesta. En producción viajaría
-     * por email con un token de restablecimiento de un solo uso.
-     */
+    /** Genera una contraseña temporal legible: CFC-XXXXXX (6 caracteres seguros). */
+    public String generarPasswordTemporal() {
+        String alfabeto = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+        StringBuilder sb = new StringBuilder("CFC-");
+        for (int i = 0; i < 6; i++) sb.append(alfabeto.charAt(RANDOM.nextInt(alfabeto.length())));
+        return sb.toString();
+    }
+
+    /** El usuario autenticado cambia su propia contraseña (validando la actual). */
+    @Transactional
+    public void cambiarPassword(Authentication llamador, CambiarPasswordDTO dto) {
+        Usuario usuario = usuarioRepository.findByCorreo(llamador.getName())
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario", llamador.getName()));
+        if (!passwordEncoder.matches(dto.passwordActual(), usuario.getPassword())) {
+            throw new BusinessException("La contraseña actual no es correcta", HttpStatus.BAD_REQUEST);
+        }
+        if (passwordEncoder.matches(dto.passwordNueva(), usuario.getPassword())) {
+            throw new BusinessException("La nueva contraseña debe ser diferente a la actual",
+                    HttpStatus.BAD_REQUEST);
+        }
+        usuario.setPassword(passwordEncoder.encode(dto.passwordNueva()));
+        usuario.setPasswordTemporal(false);   // ya no necesita cambio forzado
+    }
+
+    /** Recuperación: genera temporal, la marca como temporal → el próximo login exigirá el cambio. */
     @Transactional
     public String recuperar(String correo) {
         Usuario usuario = usuarioRepository.findByCorreo(correo.trim().toLowerCase())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario", correo));
-        String temporal = UUID.randomUUID().toString().substring(0, 8) + "A!";
+        String temporal = generarPasswordTemporal();
         usuario.setPassword(passwordEncoder.encode(temporal));
+        usuario.setPasswordTemporal(true);
         return temporal;
     }
 }
