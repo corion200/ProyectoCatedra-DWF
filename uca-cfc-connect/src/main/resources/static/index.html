@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>CFC Connect — Centro de Formación Continua UDB</title>
+    <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+
+<!-- ===================== PANTALLA DE LOGIN ===================== -->
+<section id="vista-login" class="vista">
+    <div class="caja-login">
+        <h1>🎓 CFC Connect</h1>
+        <p class="subtitulo">Centro de Formación Continua UDB</p>
+
+        <label>Correo</label>
+        <input type="email" id="login-correo" placeholder="correo@udb.edu.sv">
+
+        <label>Contraseña</label>
+        <input type="password" id="login-clave" placeholder="Contraseña">
+
+        <button onclick="iniciarSesion()">Entrar</button>
+        <p id="login-error" class="error"></p>
+
+        <p class="ayuda">
+            Usuarios demo:<br>
+            admin@udb.edu.sv / Admin123! (admin)<br>
+            recep@udb.edu.sv / Recep123! (recepción)<br>
+            contab@udb.edu.sv / Conta123! (contabilidad)<br>
+            cliente@gmail.com / Cliente123! (cliente)
+        </p>
+    </div>
+</section>
+
+<!-- ===================== APP (después de iniciar sesión) ===================== -->
+<section id="vista-app" class="vista oculto">
+
+    <header class="topbar">
+        <span id="usuario-actual"></span>
+        <button onclick="cerrarSesion()">Salir</button>
+    </header>
+
+    <!-- Menú principal: cada botón muestra SOLO su sección -->
+    <nav class="menu">
+        <button class="menu-btn" data-vista="agenda">📅 Agenda</button>
+        <button class="menu-btn" data-vista="cursos">📚 Cursos</button>
+        <button class="menu-btn" data-vista="clientes">👥 Clientes</button>
+        <button class="menu-btn" data-vista="inscripciones">📝 Inscripciones</button>
+        <button class="menu-btn" data-vista="pagos">💰 Pagos</button>
+    </nav>
+
+    <main class="contenido">
+
+        <!-- ---- AGENDA ---- -->
+        <div id="seccion-agenda" class="seccion">
+            <h2>📅 Agenda Institucional</h2>
+            <label>Fecha</label>
+            <input type="date" id="agenda-fecha">
+            <button onclick="consultarAgenda()">Consultar</button>
+            <p class="nota">Módulo en construcción — todavía no tiene datos en el backend.</p>
+        </div>
+
+        <!-- ---- CURSOS ---- -->
+        <div id="seccion-cursos" class="seccion">
+            <h2>📚 Oferta académica</h2>
+            <button onclick="cargarCursos()">🔄 Actualizar lista</button>
+            <table id="tabla-cursos">
+                <thead>
+                <tr><th>Código</th><th>Nombre</th><th>Horas</th><th>Precio</th><th>Estado</th></tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- ---- CLIENTES ---- -->
+        <div id="seccion-clientes" class="seccion">
+            <h2>👥 Clientes</h2>
+
+            <div class="formulario">
+                <h3>Registrar cliente</h3>
+                <label>Tipo</label>
+                <select id="cli-tipo">
+                    <option value="PERSONA">Persona</option>
+                    <option value="EMPRESA">Empresa</option>
+                </select>
+
+                <label>Nombre / Razón social</label>
+                <input id="cli-nombre">
+
+                <label>DUI (########-#)</label>
+                <input id="cli-dui" placeholder="00000000-0">
+
+                <label>NIT</label>
+                <input id="cli-nit">
+
+                <label>Correo</label>
+                <input id="cli-correo" type="email">
+
+                <label>Teléfono</label>
+                <input id="cli-telefono">
+
+                <label>Persona de contacto</label>
+                <input id="cli-contacto">
+
+                <label>Dirección</label>
+                <input id="cli-direccion">
+
+                <button onclick="guardarCliente()">Guardar cliente</button>
+                <p id="cli-mensaje" class="mensaje"></p>
+            </div>
+
+            <button onclick="cargarClientes()">🔄 Ver clientes registrados</button>
+            <table id="tabla-clientes">
+                <thead>
+                <tr><th>ID</th><th>Nombre</th><th>Correo</th><th>Teléfono</th></tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- ---- INSCRIPCIONES ---- -->
+        <div id="seccion-inscripciones" class="seccion">
+            <h2>📝 Nueva inscripción</h2>
+
+            <label>ID del cliente</label>
+            <input id="ins-cliente" type="number">
+
+            <label>ID del curso</label>
+            <input id="ins-curso" type="number">
+
+            <label>Observaciones (opcional)</label>
+            <input id="ins-obs">
+
+            <button onclick="inscribir()">Inscribir</button>
+            <p id="ins-mensaje" class="mensaje"></p>
+        </div>
+
+        <!-- ---- PAGOS ---- -->
+        <div id="seccion-pagos" class="seccion">
+            <h2>💰 Control de pagos</h2>
+
+            <label>ID inscripción</label>
+            <input id="pago-inscripcion" type="number">
+
+            <label>Monto</label>
+            <input id="pago-monto" type="number" step="0.01">
+
+            <label>Método</label>
+            <select id="pago-metodo">
+                <option value="EFECTIVO">Efectivo</option>
+                <option value="TARJETA">Tarjeta</option>
+                <option value="TRANSFERENCIA">Transferencia</option>
+                <option value="DEPOSITO">Depósito</option>
+            </select>
+
+            <button onclick="registrarPago()">Registrar pago</button>
+            <p id="pago-mensaje" class="mensaje"></p>
+
+            <hr>
+            <button onclick="consultarSaldo()">Consultar saldo (misma ID inscripción)</button>
+            <p id="saldo-resultado" class="mensaje"></p>
+        </div>
+
+    </main>
+</section>
+
+<script src="js/app.js"></script>
+</body>
+</html>

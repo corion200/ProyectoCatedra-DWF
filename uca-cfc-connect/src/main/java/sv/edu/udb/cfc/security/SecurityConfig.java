@@ -1,4 +1,4 @@
-package sv.edu.udb.cfc.config;
+package sv.edu.udb.cfc.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -6,6 +6,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 
 /**
  * ⚠️ CONFIGURACIÓN TEMPORAL DE DESARROLLO ⚠️
@@ -25,8 +26,11 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers("/v3/api-docs/**", "/api-docs/**").permitAll() // /api-docs = path custom del properties
-                        .anyRequest().authenticated());
+                        .requestMatchers("/v3/api-docs/**", "/api-docs/**").permitAll()
+                        .requestMatchers("/", "/index.html").permitAll()
+                        .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
+                        .anyRequest().authenticated() // O .permitAll() si quieres que todo sea libre temporalmente
+                );
         return http.build();
     }
 }
