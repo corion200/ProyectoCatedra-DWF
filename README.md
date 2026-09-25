@@ -55,3 +55,28 @@ El sistema centraliza y automatiza los procesos académicos y administrativos de
    ```bash
    git clone [https://github.com/corion200/ProyectoCatedra-DWF.git](https://github.com/corion200/ProyectoCatedra-DWF.git)
    cd ProyectoCatedra-DWF
+
+### Configuración de la Base de Datos
+
+El sistema usa **MySQL** (probado con XAMPP) y el esquema se crea con el script `DB.sql` incluido en la raíz del repositorio. Hibernate está configurado en modo `ddl-auto=none`, por lo que **no** crea ni modifica tablas automáticamente — el script SQL es la única fuente de verdad del esquema.
+
+**Pasos:**
+
+1. Inicia tu servidor MySQL (por ejemplo, desde el panel de XAMPP).
+2. Crea la base de datos y carga el esquema ejecutando el script:
+```bash
+   mysql -u root -p < DB.sql
+```
+Esto crea la base de datos `uca_cfc_db` con todas sus tablas, relaciones e índices.
+3. Configura las credenciales de conexión. Por defecto el proyecto usa el usuario `root` sin contraseña (típico de XAMPP). Si tu MySQL tiene contraseña, define las siguientes variables de entorno antes de ejecutar la aplicación:
+```bash
+   DB_USERNAME=root
+   DB_PASSWORD=tu_contraseña
+```
+También puedes editarlas directamente en `src/main/resources/application.properties`:
+```properties
+   spring.datasource.url=jdbc:mysql://localhost:3306/uca_cfc_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+   spring.datasource.username=${DB_USERNAME:root}
+   spring.datasource.password=${DB_PASSWORD:}
+```
+4. Verifica que MySQL esté escuchando en el puerto por defecto `3306`.
