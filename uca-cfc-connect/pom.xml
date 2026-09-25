@@ -96,7 +96,7 @@
             <version>${springdoc.version}</version>
         </dependency>
 
-        <!-- ==================== MAPEO DTO <-> MapStruct) ==================== -->
+        <!-- ==================== MAPEO DTO <-> (MapStruct) ==================== -->
         <dependency>
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct</artifactId>
