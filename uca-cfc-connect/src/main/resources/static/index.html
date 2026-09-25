@@ -2,168 +2,435 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>CFC Connect — Centro de Formación Continua UDB</title>
-    <link rel="stylesheet" href="css/estilos.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
+    <style>
+        :root{--azul:#1e2a5a;--azul2:#2c3d80;--fondo:#f0f2f7;--ok:#116632;--err:#9b1c1c;--borde:#dfe4ef}
+        *{box-sizing:border-box;font-family:'Segoe UI',Arial,sans-serif}
+        body{margin:0;background:var(--fondo);color:#1a2233}
+        .hidden{display:none!important}
+
+        /* ───── Header ───── */
+        header{background:linear-gradient(135deg,var(--azul) 0%,var(--azul2) 100%);color:#fff;padding:14px 24px;
+            display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 10px rgba(20,30,70,.25);position:sticky;top:0;z-index:10}
+        header h1{margin:0;font-size:19px;letter-spacing:.3px}
+        header h1 .grad{display:inline-block;transition:transform .4s}
+        header h1:hover .grad{transform:rotate(-10deg) scale(1.15)}
+        .sesion{font-size:13px;display:flex;align-items:center;gap:6px}
+        .rol-badge{background:#ffd24d;color:var(--azul);padding:3px 12px;border-radius:12px;font-weight:700;
+            font-size:12px;animation:latido 2.4s ease-in-out infinite}
+        @keyframes latido{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+
+        /* ───── Navegación ───── */
+        nav{display:flex;gap:4px;background:#fff;padding:6px 24px;border-bottom:1px solid var(--borde);position:sticky;top:57px;z-index:9}
+        nav button{border:none;background:none;padding:11px 16px;cursor:pointer;font-size:14px;color:#5a6478;
+            border-bottom:3px solid transparent;transition:color .2s,border-color .2s,background .2s;border-radius:6px 6px 0 0}
+        nav button:hover{color:var(--azul);background:#f4f6fc}
+        nav button.activo{border-color:var(--azul);font-weight:700;color:var(--azul)}
+        nav .salir{margin-left:auto;color:#b3453f}nav .salir:hover{background:#fdf0ef;color:var(--err)}
+
+        /* ───── Contenido ───── */
+        main{max-width:1000px;margin:22px auto;padding:0 16px}
+        .card{background:#fff;border-radius:14px;padding:22px;margin-bottom:18px;
+            box-shadow:0 1px 2px rgba(20,30,70,.06),0 8px 24px rgba(20,30,70,.05);
+            animation:aparecer .45s cubic-bezier(.2,.7,.3,1) both}
+        .card:nth-child(2){animation-delay:.05s}.card:nth-child(3){animation-delay:.1s}
+        @keyframes aparecer{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+        .card h2{margin:0 0 14px;font-size:17px;color:var(--azul);display:flex;align-items:center;gap:8px}
+        .card h2::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--borde),transparent)}
+
+        /* ───── Formularios ───── */
+        label{font-size:12px;font-weight:600;display:block;margin-top:10px;color:#3d4761;letter-spacing:.2px}
+        input,select{padding:10px 12px;border:1.5px solid var(--borde);border-radius:8px;margin:5px 0;width:100%;
+            font-size:14px;transition:border-color .2s,box-shadow .2s;background:#fbfcff}
+        input:focus,select:focus{outline:none;border-color:var(--azul2);box-shadow:0 0 0 3px rgba(44,61,128,.13);background:#fff}
+        button.primario{background:linear-gradient(135deg,var(--azul),var(--azul2));color:#fff;border:none;padding:11px 22px;
+            border-radius:8px;cursor:pointer;margin-top:14px;font-weight:600;font-size:14px;
+            transition:transform .15s,box-shadow .15s,filter .15s;box-shadow:0 3px 8px rgba(30,42,90,.25)}
+        button.primario:hover{transform:translateY(-2px);box-shadow:0 6px 14px rgba(30,42,90,.32);filter:brightness(1.08)}
+        button.primario:active{transform:translateY(0) scale(.98)}
+        button.link{background:none;border:none;color:var(--azul2);text-decoration:underline;cursor:pointer;
+            padding:0;margin-top:14px;font-size:13px;transition:color .2s}
+        button.link:hover{color:var(--azul)}
+        .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+
+        /* ───── Tablas ───── */
+        table{width:100%;border-collapse:collapse;font-size:13px;border-radius:10px;overflow:hidden}
+        th{background:linear-gradient(180deg,#f2f5fb,#e9edf6);text-align:left;padding:10px 8px;color:#3d4761;
+            font-size:12px;text-transform:uppercase;letter-spacing:.4px}
+        td{padding:9px 8px;border-top:1px solid var(--borde)}
+        tbody tr{transition:background .15s}
+        tbody tr:hover{background:#f6f8fe}
+        .cargando{color:#8a93ab;font-style:italic;padding:14px}
+        .cargando::after{content:'···';animation:puntos 1.2s steps(4) infinite;display:inline-block;width:1.4em;text-align:left}
+        @keyframes puntos{0%{content:''}25%{content:'·'}50%{content:'··'}75%{content:'···'}}
+
+        /* ───── Banners ───── */
+        .banner{padding:13px 16px;border-radius:10px;margin-bottom:14px;display:none;font-size:14px;
+            animation:bajar .3s ease both;border-left:4px solid transparent}
+        @keyframes bajar{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+        .ok{background:#e4f6ea;color:var(--ok);display:block;border-color:#2fa35a}
+        .err{background:#fde8e8;color:var(--err);display:block;border-color:#d65a5a}
+
+        /* ───── Login ───── */
+        #vistaLogin{max-width:400px;margin:7vh auto 40px}
+        .login-logo{text-align:center;font-size:44px;margin-bottom:4px;animation:flotar 3.5s ease-in-out infinite}
+        @keyframes flotar{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+        .subtitulo{text-align:center;color:#6a748c;font-size:13px;margin:0 0 16px}
+
+        /* ───── Modal cambio de contraseña ───── */
+        .modal-fondo{position:fixed;inset:0;background:rgba(20,28,55,.55);display:flex;align-items:center;
+            justify-content:center;z-index:100;backdrop-filter:blur(3px);animation:aparecer .25s both}
+        .modal{background:#fff;border-radius:16px;padding:26px;max-width:400px;width:92%;
+            box-shadow:0 20px 60px rgba(0,0,0,.3);animation:pop .3s cubic-bezier(.2,.9,.3,1.2) both}
+        @keyframes pop{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+        .temporal-box{background:#fff8e6;border:1px dashed #e0b83c;border-radius:10px;padding:12px 14px;margin-top:10px;
+            font-size:14px;animation:aparecer .4s .1s both}
+        .temporal-box code{font-size:19px;font-weight:800;color:#8a6d00;letter-spacing:1px;user-select:all}
+
+        /* ───── Otros ───── */
+        .saldo{font-size:30px;font-weight:800;color:var(--ok)}
+        .separador{margin:18px 0;border:none;border-top:1px solid var(--borde)}
+        .ayuda{font-size:12px;color:#6a748c;background:#f4f6fb;border-radius:8px;padding:10px 12px;line-height:1.6;margin-top:14px}
+        .nota-rol{font-size:12px;color:#8a6d00;background:#fff8e6;border-radius:6px;padding:6px 10px;margin-top:6px}
+    </style>
 </head>
 <body>
 
-<!-- ===================== PANTALLA DE LOGIN ===================== -->
-<section id="vista-login" class="vista">
-    <div class="caja-login">
-        <h1>🎓 CFC Connect</h1>
-        <p class="subtitulo">Centro de Formación Continua UDB</p>
+<header>
+    <h1><span class="grad">🎓</span> CFC Connect — Centro de Formación Continua UDB</h1>
+    <div class="sesion" id="sesionInfo"></div>
+</header>
 
-        <label>Correo</label>
-        <input type="email" id="login-correo" placeholder="correo@udb.edu.sv">
-
-        <label>Contraseña</label>
-        <input type="password" id="login-clave" placeholder="Contraseña">
-
-        <button onclick="iniciarSesion()">Entrar</button>
-        <p id="login-error" class="error"></p>
-
-        <p class="ayuda">
-            Usuarios demo:<br>
-            admin@udb.edu.sv / Admin123! (admin)<br>
-            recep@udb.edu.sv / Recep123! (recepción)<br>
-            contab@udb.edu.sv / Conta123! (contabilidad)<br>
-            cliente@gmail.com / Cliente123! (cliente)
-        </p>
+<!-- ═══════════ LOGIN ═══════════ -->
+<div id="vistaLogin">
+    <div class="login-logo">🎓</div>
+    <div class="card">
+        <p class="subtitulo">Centro de Formación Continua · Universidad Don Bosco</p>
+        <div class="banner" id="bannerLogin"></div>
+        <label>Correo institucional</label><input id="logCorreo" value="admin@udb.edu.sv">
+        <label>Contraseña</label><input id="logPass" type="password" value="Admin123!">
+        <button class="primario" onclick="login()" style="width:100%">Entrar</button>
+        <button class="link" onclick="olvidePass()">¿Olvidaste tu contraseña?</button>
+        <p class="ayuda"><b>Demo:</b> admin@udb.edu.sv/Admin123! · recep@udb.edu.sv/Recep123!<br>
+            contab@udb.edu.sv/Conta123! · cliente@gmail.com/Cliente123!</p>
     </div>
-</section>
+</div>
 
-<!-- ===================== APP (después de iniciar sesión) ===================== -->
-<section id="vista-app" class="vista oculto">
+<!-- ═══════════ MODAL: CAMBIAR CONTRASEÑA (obligatoria si es temporal) ═══════════ -->
+<div id="modalPass" class="modal-fondo hidden">
+    <div class="modal">
+        <h2 style="color:var(--azul);margin-top:0">🔐 Cambiar contraseña</h2>
+        <p id="modalPassAviso" style="font-size:13px;color:#6a748c"></p>
+        <div class="banner" id="bannerPass"></div>
+        <label>Contraseña actual / temporal</label><input id="passActual" type="password">
+        <label>Nueva contraseña (mín. 8 caracteres)</label><input id="passNueva" type="password">
+        <label>Repetir nueva contraseña</label><input id="passNueva2" type="password">
+        <button class="primario" onclick="guardarPassword()" style="width:100%">Guardar nueva contraseña</button>
+    </div>
+</div>
 
-    <header class="topbar">
-        <span id="usuario-actual"></span>
-        <button onclick="cerrarSesion()">Salir</button>
-    </header>
-
-    <!-- Menú principal: cada botón muestra SOLO su sección -->
-    <nav class="menu">
-        <button class="menu-btn" data-vista="agenda">📅 Agenda</button>
-        <button class="menu-btn" data-vista="cursos">📚 Cursos</button>
-        <button class="menu-btn" data-vista="clientes">👥 Clientes</button>
-        <button class="menu-btn" data-vista="inscripciones">📝 Inscripciones</button>
-        <button class="menu-btn" data-vista="pagos">💰 Pagos</button>
+<!-- ═══════════ APP ═══════════ -->
+<div id="vistaApp" class="hidden">
+    <nav>
+        <button class="tab-btn activo" data-vista="agenda" onclick="tab('agenda',this)">📅 Agenda</button>
+        <button class="tab-btn" data-vista="cursos" onclick="tab('cursos',this)">📖 Cursos</button>
+        <button class="tab-btn" data-vista="clientes" onclick="tab('clientes',this)">👥 Clientes</button>
+        <button class="tab-btn" data-vista="inscripciones" onclick="tab('inscripciones',this)">✏️ Inscripciones</button>
+        <button class="tab-btn" data-vista="pagos" onclick="tab('pagos',this)">💰 Pagos</button>
+        <button class="tab-btn" data-vista="usuarios" onclick="tab('usuarios',this)">🔑 Usuarios</button>
+        <button onclick="abrirCambioPass()" style="color:#5a6478" title="Cambiar mi contraseña">🔒 Mi contraseña</button>
+        <button class="salir" onclick="logout()">Salir</button>
     </nav>
+    <main>
+        <div class="banner" id="banner"></div>
 
-    <main class="contenido">
-
-        <!-- ---- AGENDA ---- -->
-        <div id="seccion-agenda" class="seccion">
-            <h2>📅 Agenda Institucional</h2>
-            <label>Fecha</label>
-            <input type="date" id="agenda-fecha">
-            <button onclick="consultarAgenda()">Consultar</button>
-            <p class="nota">Módulo en construcción — todavía no tiene datos en el backend.</p>
+        <div id="agenda" class="card">
+            <h2>📅 Agenda Institucional (RF13)</h2>
+            <label>Fecha</label><input type="date" id="agendaFecha">
+            <button class="primario" onclick="cargarAgenda()">Consultar</button>
+            <div id="agendaTabla" style="margin-top:14px"></div>
         </div>
 
-        <!-- ---- CURSOS ---- -->
-        <div id="seccion-cursos" class="seccion">
-            <h2>📚 Oferta académica</h2>
-            <button onclick="cargarCursos()">🔄 Actualizar lista</button>
-            <table id="tabla-cursos">
-                <thead>
-                <tr><th>Código</th><th>Nombre</th><th>Horas</th><th>Precio</th><th>Estado</th></tr>
-                </thead>
-                <tbody></tbody>
-            </table>
+        <div id="cursos" class="card hidden">
+            <h2>📖 Oferta académica</h2>
+            <div id="cursosTabla"></div>
         </div>
 
-        <!-- ---- CLIENTES ---- -->
-        <div id="seccion-clientes" class="seccion">
-            <h2>👥 Clientes</h2>
-
-            <div class="formulario">
-                <h3>Registrar cliente</h3>
-                <label>Tipo</label>
-                <select id="cli-tipo">
-                    <option value="PERSONA">Persona</option>
-                    <option value="EMPRESA">Empresa</option>
-                </select>
-
-                <label>Nombre / Razón social</label>
-                <input id="cli-nombre">
-
-                <label>DUI (########-#)</label>
-                <input id="cli-dui" placeholder="00000000-0">
-
-                <label>NIT</label>
-                <input id="cli-nit">
-
-                <label>Correo</label>
-                <input id="cli-correo" type="email">
-
-                <label>Teléfono</label>
-                <input id="cli-telefono">
-
-                <label>Persona de contacto</label>
-                <input id="cli-contacto">
-
-                <label>Dirección</label>
-                <input id="cli-direccion">
-
-                <button onclick="guardarCliente()">Guardar cliente</button>
-                <p id="cli-mensaje" class="mensaje"></p>
-            </div>
-
-            <button onclick="cargarClientes()">🔄 Ver clientes registrados</button>
-            <table id="tabla-clientes">
-                <thead>
-                <tr><th>ID</th><th>Nombre</th><th>Correo</th><th>Teléfono</th></tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </div>
-
-        <!-- ---- INSCRIPCIONES ---- -->
-        <div id="seccion-inscripciones" class="seccion">
-            <h2>📝 Nueva inscripción</h2>
-
-            <label>ID del cliente</label>
-            <input id="ins-cliente" type="number">
-
-            <label>ID del curso</label>
-            <input id="ins-curso" type="number">
-
-            <label>Observaciones (opcional)</label>
-            <input id="ins-obs">
-
-            <button onclick="inscribir()">Inscribir</button>
-            <p id="ins-mensaje" class="mensaje"></p>
-        </div>
-
-        <!-- ---- PAGOS ---- -->
-        <div id="seccion-pagos" class="seccion">
-            <h2>💰 Control de pagos</h2>
-
-            <label>ID inscripción</label>
-            <input id="pago-inscripcion" type="number">
-
-            <label>Monto</label>
-            <input id="pago-monto" type="number" step="0.01">
-
-            <label>Método</label>
-            <select id="pago-metodo">
-                <option value="EFECTIVO">Efectivo</option>
-                <option value="TARJETA">Tarjeta</option>
-                <option value="TRANSFERENCIA">Transferencia</option>
-                <option value="DEPOSITO">Depósito</option>
+        <div id="clientes" class="card hidden">
+            <h2>👥 Clientes registrados</h2>
+            <div id="clientesTabla"></div>
+            <hr class="separador">
+            <h2>Registrar nuevo cliente</h2>
+            <label>Tipo</label>
+            <select id="cliTipo" onchange="tipoCliente()">
+                <option value="PERSONA">Persona</option><option value="EMPRESA">Empresa</option>
             </select>
-
-            <button onclick="registrarPago()">Registrar pago</button>
-            <p id="pago-mensaje" class="mensaje"></p>
-
-            <hr>
-            <button onclick="consultarSaldo()">Consultar saldo (misma ID inscripción)</button>
-            <p id="saldo-resultado" class="mensaje"></p>
+            <label>Nombre / Razón social</label><input id="cliNombre">
+            <div class="grid2">
+                <div id="campoDui"><label>DUI</label><input id="cliDui" placeholder="########-#"></div>
+                <div><label>NIT</label><input id="cliNit"></div>
+            </div>
+            <div class="grid2">
+                <div><label>Correo</label><input id="cliCorreo"></div>
+                <div><label>Teléfono</label><input id="cliTel"></div>
+            </div>
+            <div id="campoContacto" class="hidden"><label>Persona de contacto</label><input id="cliContacto"></div>
+            <label>Dirección</label><input id="cliDir">
+            <button class="primario" onclick="crearCliente()">Guardar cliente</button>
         </div>
 
-    </main>
-</section>
+        <div id="inscripciones" class="card hidden">
+            <h2>✏️ Nueva inscripción</h2>
+            <div class="grid2">
+                <div><label>ID del cliente</label><input id="insCliente" type="number"></div>
+                <div><label>ID del curso</label><input id="insCurso" type="number"></div>
+            </div>
+            <button class="primario" onclick="crearInscripcion()">Inscribir</button>
+            <div id="insTabla" style="margin-top:16px"></div>
+        </div>
 
-<script src="js/app.js"></script>
+        <div id="pagos" class="card hidden">
+            <h2>💰 Control de pagos (RF10, RF15)</h2>
+            <div class="grid2">
+                <div><label>ID inscripción</label><input id="pagIns" type="number"></div>
+                <div><label>Monto</label><input id="pagMonto" type="number" step="0.01"></div>
+            </div>
+            <label>Método</label>
+            <select id="pagMetodo"><option>EFECTIVO</option><option>TARJETA</option><option>TRANSFERENCIA</option><option>DEPOSITO</option></select>
+            <button class="primario" onclick="registrarPago()">Registrar pago</button>
+            <hr class="separador">
+            <button class="primario" onclick="verSaldo()">Consultar saldo</button>
+            <div id="saldoBox" style="margin-top:10px"></div>
+        </div>
+
+        <div id="usuarios" class="card hidden">
+            <h2>🔑 Gestión de usuarios</h2>
+            <div id="usuariosTabla"></div>
+            <hr class="separador">
+            <h2>Crear nuevo usuario (cuenta de acceso)</h2>
+            <label>Nombre completo</label><input id="usuNombre">
+            <label>Correo</label><input id="usuCorreo" type="email">
+            <label>Rol</label>
+            <select id="usuRol">
+                <option>CLIENTE</option><option>RECEPCIONISTA</option><option>CONTABILIDAD</option><option>ADMIN</option>
+            </select>
+            <div id="notaRolSoloCliente" class="nota-rol hidden">Como RECEPCIONISTA solo puedes crear cuentas de rol CLIENTE.</div>
+            <button class="primario" onclick="crearUsuario()">Crear usuario y generar contraseña temporal</button>
+            <div id="temporalBox" class="temporal-box hidden"></div>
+        </div>
+    </main>
+</div>
+
+<script>
+    const API = '/api/v1';
+    let TOKEN = localStorage.getItem('cfcToken'),
+        ROL   = localStorage.getItem('cfcRol'),
+        USER  = localStorage.getItem('cfcUser');
+
+    /** Matriz de permisos por rol (espejo de SecurityConfig + enunciado de roles). */
+    const PERMISOS = {
+        ADMIN:         ['agenda','cursos','clientes','inscripciones','pagos','usuarios'],
+        RECEPCIONISTA: ['agenda','cursos','clientes','inscripciones','usuarios'],
+        CONTABILIDAD:  ['cursos','pagos'],
+        CLIENTE:       ['cursos']
+    };
+    const PESTANA_INICIAL = { ADMIN:'agenda', RECEPCIONISTA:'agenda', CONTABILIDAD:'pagos', CLIENTE:'cursos' };
+
+    async function api(ruta, metodo='GET', cuerpo=null){
+        const r = await fetch(API+ruta, { method:metodo,
+            headers:{ 'Content-Type':'application/json', ...(TOKEN?{Authorization:'Bearer '+TOKEN}:{}) },
+            body: cuerpo ? JSON.stringify(cuerpo) : null });
+        if (r.ok) return r.status===204 ? null : r.json();
+        if (r.status === 403) throw { status:403, message:'Tu rol ('+ROL+') no tiene permiso para esta operación.' };
+        if (r.status === 401) throw { status:401, message:'Sesión no válida o expirada. Inicia sesión de nuevo.' };
+        let msg = 'Error del servidor ('+r.status+')';
+        try { const e = await r.json();
+            msg = e.message + (e.detalles ? ' — '+Object.entries(e.detalles).map(([k,v])=>k+': '+v).join(' · ') : '');
+        } catch(_) {}
+        throw { status:r.status, message:msg };
+    }
+    function banner(txt,tipo){ const b=document.getElementById('banner'); b.className='banner '+tipo; b.textContent=txt; }
+    function bannerLogin(txt,tipo){ const b=document.getElementById('bannerLogin'); b.className='banner '+tipo; b.textContent=txt; }
+    function bannerPass(txt,tipo){ const b=document.getElementById('bannerPass'); b.className='banner '+tipo; b.textContent=txt; }
+
+    async function login(){
+        try{
+            const t = await api('/auth/login','POST',{ correo:logCorreo.value.trim(), password:logPass.value });
+            setSesion(t);
+        }catch(e){ bannerLogin(e.status===401?'Correo o contraseña incorrectos.':e.message,'err'); }
+    }
+    function setSesion(t){
+        TOKEN=t.token; ROL=t.rol; USER=t.correo;
+        localStorage.setItem('cfcToken',TOKEN); localStorage.setItem('cfcRol',ROL); localStorage.setItem('cfcUser',USER);
+        if (t.debeCambiarPassword) { abrirCambioPass(true); return; }   // ⭐ cambio obligatorio
+        iniciarApp();
+    }
+    function logout(){ localStorage.clear(); location.reload(); }
+
+    function abrirCambioPass(obligatoria=false){
+        modalPass.classList.remove('hidden');
+        bannerPass('','');
+        modalPassAviso.textContent = obligatoria
+            ? 'Tu cuenta tiene una contraseña TEMPORAL generada por el sistema. Por seguridad debes establecer una nueva antes de continuar.'
+            : 'Establece una nueva contraseña para tu cuenta.';
+    }
+    async function guardarPassword(){
+        if (passNueva.value !== passNueva2.value) { bannerPass('Las nuevas contraseñas no coinciden.','err'); return; }
+        try{
+            await api('/auth/cambiar-password','PATCH',
+                { passwordActual:passActual.value, passwordNueva:passNueva.value });
+            modalPass.classList.add('hidden');
+            localStorage.clear(); TOKEN=ROL=USER=null;
+            bannerLogin('✅ Contraseña actualizada. Inicia sesión con tu nueva contraseña.','ok');
+            logPass.value='';
+        }catch(e){ bannerPass(e.message,'err'); }
+    }
+    async function olvidePass(){
+        try{
+            const r = await api('/auth/recuperar?correo='+encodeURIComponent(logCorreo.value.trim()),'POST');
+            bannerLogin('🔑 Contraseña temporal generada: '+r.contrasenaTemporal+' — úsela para entrar y deberá cambiarla.','ok');
+        }catch(e){ bannerLogin(e.message,'err'); }
+    }
+
+    function iniciarApp(){
+        vistaLogin.classList.add('hidden'); vistaApp.classList.remove('hidden');
+        sesionInfo.innerHTML = 'Sesión: <b>'+USER+'</b><span class="rol-badge">'+ROL+'</span>';
+        document.getElementById('agendaFecha').value = new Date().toISOString().slice(0,10);
+
+        const permitidas = PERMISOS[ROL] || [];
+        document.querySelectorAll('nav .tab-btn').forEach(b=>{
+            b.style.display = permitidas.includes(b.dataset.vista) ? '' : 'none';
+        });
+        if (ROL==='RECEPCIONISTA') notaRolSoloCliente.classList.remove('hidden');
+
+        const inicial = PESTANA_INICIAL[ROL] || 'cursos';
+        tab(inicial, document.querySelector('.tab-btn[data-vista="'+inicial+'"]'));
+        if (permitidas.includes('cursos')) cargarCursos();
+        if (permitidas.includes('usuarios')) cargarUsuarios();
+    }
+    function tab(id, btn){
+        document.querySelectorAll('nav .tab-btn').forEach(b=>b.classList.remove('activo'));
+        if (btn) btn.classList.add('activo');
+        ['agenda','cursos','clientes','inscripciones','pagos','usuarios']
+            .forEach(s=>document.getElementById(s).classList.toggle('hidden', s!==id));
+        if (id==='agenda' && !agendaTabla.innerHTML) cargarAgenda();
+        if (id==='clientes' && !clientesTabla.innerHTML) cargarClientes();
+        if (id==='usuarios' && !usuariosTabla.innerHTML) cargarUsuarios();
+    }
+
+    function spinner(cols){ return '<tr><td colspan="'+cols+'" class="cargando">Cargando</td></tr>'; }
+
+    async function cargarAgenda(){
+        try{
+            agendaTabla.innerHTML = '<table>'+spinner(5)+'</table>';
+            const items = await api('/agenda?fecha='+agendaFecha.value);
+            agendaTabla.innerHTML = items.length
+                ? '<table><thead><tr><th>Tipo</th><th>Actividad</th><th>Horario</th><th>Lugar</th><th>Estado</th></tr></thead><tbody>'
+                + items.map(i=>'<tr><td><b>'+i.tipo+'</b></td><td>'+i.titulo+'</td><td>'
+                    +(i.horaInicio||'todo el día')+(i.horaFin?' – '+i.horaFin:'')+'</td><td>'+i.lugar
+                    +'</td><td>'+i.estado+'</td></tr>').join('')+'</tbody></table>'
+                : '<p style="color:#6a748c">Sin actividades programadas para esta fecha.</p>';
+        }catch(e){ agendaTabla.innerHTML = '<p style="color:var(--err)">'+e.message+'</p>'; }
+    }
+    async function cargarCursos(){
+        try{
+            cursosTabla.innerHTML = '<table>'+spinner(7)+'</table>';
+            const pag = await api('/cursos?size=50');
+            cursosTabla.innerHTML = '<table><thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Precio</th><th>Cupo</th><th>Fechas</th><th>Estado</th></tr></thead><tbody>'
+                + pag.content.map(c=>'<tr><td><b>'+c.codigo+'</b></td><td>'+c.nombre+'</td><td>'+c.tipo+'</td><td>$'+c.precio
+                    +'</td><td>'+c.cupoMaximo+'</td><td>'+c.fechaInicio+' → '+c.fechaFin+'</td><td>'+c.estado+'</td></tr>').join('')+'</tbody></table>';
+        }catch(e){ cursosTabla.innerHTML = '<p style="color:var(--err)">'+e.message+'</p>'; }
+    }
+    async function cargarClientes(){
+        try{
+            clientesTabla.innerHTML = '<table>'+spinner(7)+'</table>';
+            const pag = await api('/clientes?size=50');
+            clientesTabla.innerHTML = pag.content.length
+                ? '<table><thead><tr><th>ID</th><th>Tipo</th><th>Nombre</th><th>DUI</th><th>Correo</th><th>Teléfono</th><th>Estado</th></tr></thead><tbody>'
+                + pag.content.map(c=>'<tr><td>'+c.id+'</td><td>'+c.tipoCliente+'</td><td>'+c.nombre+'</td><td>'
+                    +(c.dui||'—')+'</td><td>'+c.correo+'</td><td>'+c.telefono+'</td><td>'+(c.activo?'✅ Activo':'⛔ Inactivo')+'</td></tr>').join('')+'</tbody></table>'
+                : '<p style="color:#6a748c">Aún no hay clientes registrados.</p>';
+        }catch(e){ clientesTabla.innerHTML = '<p style="color:var(--err)">'+e.message+'</p>'; }
+    }
+    async function cargarUsuarios(){
+        try{
+            usuariosTabla.innerHTML = '<table>'+spinner(5)+'</table>';
+            const lista = await api('/usuarios');
+            usuariosTabla.innerHTML = '<table><thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Pendiente de cambio</th></tr></thead><tbody>'
+                + lista.map(u=>'<tr><td>'+u.nombre+'</td><td>'+u.correo+'</td><td><b>'+u.rol+'</b></td><td>'
+                    +(u.activo?'✅':'⛔')+'</td><td>'+(u.debeCambiarPassword?'🔑 Sí':'—')+'</td></tr>').join('')+'</tbody></table>';
+        }catch(e){ usuariosTabla.innerHTML = '<p style="color:var(--err)">'+e.message+'</p>'; }
+    }
+    function tipoCliente(){
+        const esEmpresa = cliTipo.value==='EMPRESA';
+        campoDui.classList.toggle('hidden', esEmpresa);
+        campoContacto.classList.toggle('hidden', !esEmpresa);
+    }
+    async function crearCliente(){
+        const esEmpresa = cliTipo.value==='EMPRESA';
+        try{
+            const c = await api('/clientes','POST',{ tipoCliente:cliTipo.value, nombre:cliNombre.value,
+                dui:esEmpresa?null:cliDui.value, nit:cliNit.value, correo:cliCorreo.value, telefono:cliTel.value,
+                contactoNombre:esEmpresa?cliContacto.value:null, direccion:cliDir.value });
+            banner('✅ Cliente creado: '+c.nombre+' (id '+c.id+')','ok');
+            clientesTabla.innerHTML=''; cargarClientes();
+        }catch(e){ banner('❌ '+e.message,'err'); }
+    }
+    async function crearUsuario(){
+        try{
+            const r = await api('/usuarios','POST',
+                { nombre:usuNombre.value.trim(), correo:usuCorreo.value.trim().toLowerCase(), rol:usuRol.value });
+            temporalBox.classList.remove('hidden');
+            temporalBox.innerHTML = '👤 <b>'+r.usuario.nombre+'</b> ('+r.usuario.correo+') creado con rol <b>'+r.usuario.rol
+                +'</b>.<br>🔑 Contraseña temporal: <code>'+ (r.contrasenaTemporal || '(ver consola del backend)') +'</code>'
+                +'<br><small>En producción se envía por email; el sistema obligará a cambiarla al primer inicio de sesión.</small>';
+            usuariosTabla.innerHTML=''; cargarUsuarios();
+        }catch(e){ temporalBox.classList.add('hidden'); banner('❌ '+e.message,'err'); }
+    }
+    async function crearInscripcion(){
+        try{
+            const i = await api('/inscripciones','POST',{ clienteId:+insCliente.value, cursoId:+insCurso.value });
+            banner('✅ Inscripción '+i.codigo+' registrada ('+i.clienteNombre+' → '+i.cursoNombre+', estado '+i.estado+')','ok');
+            insTabla.innerHTML=''; listarInscripciones();
+        }catch(e){ banner('❌ '+e.message,'err'); }
+    }
+    async function listarInscripciones(){
+        try{
+            const pag = await api('/inscripciones?size=20');
+            insTabla.innerHTML = '<table><thead><tr><th>Código</th><th>Cliente</th><th>Curso</th><th>Estado</th></tr></thead><tbody>'
+                + pag.content.map(i=>'<tr><td>'+i.codigo+'</td><td>'+i.clienteNombre+'</td><td>'+i.cursoNombre
+                    +'</td><td>'+i.estado+'</td></tr>').join('')+'</tbody></table>';
+        }catch(e){}
+    }
+    async function registrarPago(){
+        try{
+            const p = await api('/pagos','POST',{ inscripcionId:+pagIns.value, monto:+pagMonto.value, metodoPago:pagMetodo.value });
+            banner('✅ Pago '+p.codigo+' registrado por $'+p.monto+' ('+p.metodoPago+')','ok');
+        }catch(e){ banner('❌ '+e.message,'err'); }
+    }
+    /** Contador animado del saldo: de 0 al valor real en ~700ms. */
+    function animarSaldo(elemento, valorFinal){
+        const objetivo = parseFloat(valorFinal), inicio = performance.now(), dur = 700;
+        function paso(ahora){
+            const progreso = Math.min((ahora-inicio)/dur, 1);
+            const facil = 1 - Math.pow(1-progreso, 3);   // easeOutCubic
+            elemento.textContent = '$' + (objetivo*facil).toFixed(2);
+            if (progreso < 1) requestAnimationFrame(paso);
+        }
+        requestAnimationFrame(paso);
+    }
+    async function verSaldo(){
+        try{
+            const r = await api('/pagos/resumen/inscripcion/'+pagIns.value);
+            saldoBox.innerHTML = '<p>Curso: <b>$'+r.precioCurso+'</b> · Pagado: <b>$'+r.totalPagado+'</b><br>'
+                +'Saldo pendiente: <span class="saldo" id="saldoNum">$0.00</span></p>';
+            animarSaldo(document.getElementById('saldoNum'), r.saldoPendiente);
+        }catch(e){ saldoBox.innerHTML = '<p style="color:var(--err)">'+e.message+'</p>'; }
+    }
+
+    if (TOKEN) iniciarApp();
+</script>
 </body>
 </html>
