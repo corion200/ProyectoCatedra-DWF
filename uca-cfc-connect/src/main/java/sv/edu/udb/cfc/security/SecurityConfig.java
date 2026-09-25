@@ -45,7 +45,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/index.html").permitAll()
                         .requestMatchers(org.springframework.boot.autoconfigure.security.servlet.PathRequest.toStaticResources().atCommonLocations()).permitAll()
-                        .requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers("/api/v1/auth/cambiar-password").authenticated()
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/usuarios").hasAnyRole("ADMIN", "RECEPCIONISTA")
+                        .requestMatchers("/api/v1/usuarios/**").hasRole("ADMIN")
+                       .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html",
                                 "/v3/api-docs/**", "/api-docs/**").permitAll()
                         // Catálogos: solo ADMIN escribe
