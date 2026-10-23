@@ -8,6 +8,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -41,6 +43,18 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorResponse> handleBusiness(BusinessException ex, HttpServletRequest req) {
         return build(ex.getStatus(), ex.getMessage(), req, null);
+    }
+
+    /** 401 – Correo o contraseña incorrectos (también cubre usuario no encontrado por seguridad). */
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException ex, HttpServletRequest req) {
+        return build(HttpStatus.UNAUTHORIZED, "Correo o contraseña incorrectos.", req, null);
+    }
+
+    /** 403 – Cuenta inactiva[cite: 1]. */
+    @ExceptionHandler(DisabledException.class)
+    public ResponseEntity<ErrorResponse> handleDisabled(DisabledException ex, HttpServletRequest req) {
+        return build(HttpStatus.FORBIDDEN, "Tu cuenta está inactiva. Contacta al administrador.", req, null);
     }
 
     /** 400 – Falló la validación de un DTO (@Valid): responde un mapa campo → mensaje. */

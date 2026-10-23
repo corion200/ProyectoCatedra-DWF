@@ -102,6 +102,18 @@
         .fila-filtros .filtro{flex:1;min-width:200px;margin:5px 0}
         .filtroSel{width:auto;min-width:140px;flex:0 0 auto;margin:5px 0;font-size:13px;padding:9px 10px;
             color:#3d4761;font-weight:600;cursor:pointer}
+
+        /* Paginación (listas grandes): controles debajo de cada tabla */
+        .paginacion{display:flex;gap:5px;align-items:center;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
+        .paginacion .info{color:#6a748c;font-size:12px;margin-right:auto}
+        .paginacion button{border:1.5px solid var(--borde);background:#fff;color:#3d4761;min-width:32px;height:32px;
+            padding:0 8px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;transition:.15s}
+        .paginacion button:hover:not(:disabled){border-color:var(--azul2);background:#f4f6fc;color:var(--azul)}
+        .paginacion button.activo{background:linear-gradient(135deg,var(--azul),var(--azul2));border-color:var(--azul);color:#fff}
+        .paginacion button:disabled{opacity:.35;cursor:not-allowed}
+        .paginacion .puntos{color:#8a93ab;padding:0 2px}
+        .paginacion .tamano-pag{display:flex;align-items:center;gap:6px;color:#6a748c;font-size:12px;margin-left:10px}
+        .paginacion select{width:auto;min-width:0;flex:0 0 auto;margin:0;padding:6px 8px;font-size:13px}
     </style>
 </head>
 <body>
@@ -120,7 +132,6 @@
         <label>Correo institucional</label><input id="logCorreo" value="admin@udb.edu.sv">
         <label>Contraseña</label><input id="logPass" type="password" value="Admin123!">
         <button class="primario" onclick="login()" style="width:100%">Entrar</button>
-        <button class="link" onclick="olvidePass()">¿Olvidaste tu contraseña?</button>
         <p class="ayuda"><b>Demo:</b> admin@udb.edu.sv/Admin123! · recep@udb.edu.sv/Recep123!<br>
             contab@udb.edu.sv/Conta123! · cliente@gmail.com/Cliente123!</p>
     </div>
@@ -172,7 +183,7 @@
             <div class="fila-filtros">
                 <input id="filtroCursos" class="filtro" placeholder="🔎 Buscar curso: código, nombre…" oninput="filtrarTabla('filtroCursos','cursosTabla')">
                 <select id="filtroCurTipo" class="filtroSel" data-tabla="cursosTabla" data-col="2" data-todos="Todos los tipos" onchange="filtrarTabla('filtroCursos','cursosTabla')"></select>
-                <select id="filtroCurEstado" class="filtroSel" data-tabla="cursosTabla" data-col="6" data-todos="Todos los estados" data-opciones="RESERVADO,CONFIRMADO,EN PREPARACION,COMPLETADO,CANCELADO" onchange="filtrarTabla('filtroCursos','cursosTabla')"></select>
+                <select id="filtroCurEstado" class="filtroSel" data-tabla="cursosTabla" data-col="6" data-todos="Todos los estados" data-opciones="PROGRAMADO,EN CURSO,FINALIZADO,CANCELADO" onchange="filtrarTabla('filtroCursos','cursosTabla')"></select>
             </div>
             <div id="cursosTabla"></div>
             <div id="formCrearCurso" data-rol="ADMIN">
@@ -307,7 +318,7 @@
             <h2>🍽️ Servicios de catering</h2>
             <div class="fila-filtros">
                 <input id="filtroCatering" class="filtro" placeholder="🔎 Buscar catering: cliente, fecha…" oninput="filtrarTabla('filtroCatering','cateringTabla')">
-                <select id="filtroCatEstado" class="filtroSel" data-tabla="cateringTabla" data-col="6" data-todos="Todos los estados" data-opciones="RESERVADO,CONFIRMADO,EN PREPARACION,COMPLETADO,CANCELADO" onchange="filtrarTabla('filtroCatering','cateringTabla')"></select>
+                <select id="filtroCatEstado" class="filtroSel" data-tabla="cateringTabla" data-col="6" data-todos="Todos los estados" data-opciones="PENDIENTE,CONFIRMADO,FINALIZADO,CANCELADO" onchange="filtrarTabla('filtroCatering','cateringTabla')"></select>
             </div>
             <div id="cateringTabla"></div>
             <hr class="separador">
@@ -317,22 +328,24 @@
                 <div><label>Fecha del evento</label><input id="catFecha" type="date"></div>
             </div>
             <div class="grid2">
-                <div><label>Número de asistentes</label><input id="catAsistentes" type="number" min="1"></div>
-                <div><label>Precio por persona ($)</label><input id="catPrecio" type="number" step="0.01" min="0"></div>
-                <label style="display:block">Tipo de servicio
-                    <select id="catTipo" style="width:100%;padding:8px;margin-top:4px">
+                <div><label>Tipo de servicio</label>
+                    <select id="catTipo">
                         <option value="COFFEE_BREAK">Coffee break</option>
                         <option value="ALMUERZO">Almuerzo</option>
+                        <option value="BANQUETE">Banquete</option>
+                        <option value="OTRO">Otro</option>
                     </select>
-                </label>
-                <label style="display:block">Hora de entrega
-                    <input type="time" id="catHora" value="12:00" style="width:100%;padding:8px;margin-top:4px">
-                </label>
-                <label style="display:block">Lugar del evento
-                    <input type="text" id="catLugar" maxlength="255" placeholder="Ej. Auditorio principal, Campus UDB" style="width:100%;padding:8px;margin-top:4px">
-                </label>
+                </div>
+                <div><label>Número de asistentes</label><input id="catAsistentes" type="number" min="1"></div>
             </div>
-            <label>Menú / descripción</label><input id="catMenu">
+            <div class="grid2">
+                <div><label>Precio por persona ($)</label><input id="catPrecio" type="number" step="0.01" min="0"></div>
+                <div><label>Hora de entrega</label><input id="catHora" type="time"></div>
+            </div>
+            <label>Lugar del servicio</label>
+            <select id="catLugar"></select>
+            <input id="catLugarOtro" class="hidden" placeholder="Escribe el lugar (ej: instalaciones del cliente)">
+            <label>Menú (qué incluye el servicio)</label><input id="catMenu" placeholder="Ej: coffee break — pan dulce, jugo natural y fruta">
             <label>Observaciones</label><input id="catObs">
             <button class="primario" onclick="crearCatering()">Contratar catering</button>
             <p class="ayuda">El total lo calcula el backend (precio × asistentes); nunca se envía desde el cliente.</p>

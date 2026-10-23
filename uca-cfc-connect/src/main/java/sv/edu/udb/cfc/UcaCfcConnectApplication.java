@@ -12,4 +12,4 @@ public class UcaCfcConnectApplication {
     public static void main(String[] args) {
         SpringApplication.run(UcaCfcConnectApplication.class, args);
     }
-}
+}   

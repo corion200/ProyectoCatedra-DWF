@@ -27,7 +27,9 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+
 public class AuthService {
+
 
     private final UsuarioRepository usuarioRepository;
     private final RolRepository rolRepository;
@@ -46,6 +48,7 @@ public class AuthService {
         return new TokenResponseDTO(jwtService.generarToken(userDetails), "Bearer",
                 usuario.getCorreo(), usuario.getRol().getNombre(), usuario.getPasswordTemporal());
     }
+
 
     /** ADMIN crea usuarios de cualquier rol; RECEPCIONISTA solo puede crear CLIENTE. */
     @Transactional
@@ -110,18 +113,5 @@ public class AuthService {
 
         usuario.setPassword(passwordEncoder.encode(dto.passwordNueva()));
         usuario.setPasswordTemporal(false);   // Ya no necesita cambio forzado
-    }
-
-    /** Recuperación: genera temporal, la marca como temporal → el próximo login exigirá el cambio. */
-    @Transactional
-    public String recuperar(String correo) {
-        Usuario usuario = usuarioRepository.findByCorreo(correo.trim().toLowerCase())
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario", correo));
-
-        String temporal = generarPasswordTemporal();
-        usuario.setPassword(passwordEncoder.encode(temporal));
-        usuario.setPasswordTemporal(true);
-
-        return temporal;
     }
 }

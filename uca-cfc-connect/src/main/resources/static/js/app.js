@@ -59,13 +59,6 @@ async function setSesion(t){
 }
 function logout(){ localStorage.clear(); location.reload(); }
 
-async function olvidePass(){
-    try{
-        const r = await api('/auth/recuperar?correo='+encodeURIComponent(g('logCorreo').value.trim()),'POST');
-        bannerLogin('🔑 Contraseña temporal generada: '+r.contrasenaTemporal+' — úsela para entrar y deberá cambiarla.','ok');
-    }catch(e){ bannerLogin(e.message,'err'); }
-}
-
 // ───────── CAMBIO DE CONTRASEÑA (modal) ─────────
 function abrirCambioPass(obligatoria){
     g('modalPass').classList.remove('hidden');
@@ -162,6 +155,7 @@ async function cargarAgenda(){
                 +(i.horaInicio||'todo el día')+(i.horaFin?' – '+i.horaFin:'')+'</td><td>'+i.lugar
                 +'</td><td>'+i.estado+'</td></tr>').join('')+'</tbody></table>'
             : '<p style="color:#6a748c">Sin actividades programadas para esta fecha.</p>';
+        paginarVista('agendaTabla');
     }catch(e){ g('agendaTabla').innerHTML = '<p style="color:var(--err)">'+e.message+'</p>'; }
 }
 
@@ -169,10 +163,10 @@ async function cargarAgenda(){
 async function cargarCursos(){
     try{
         g('cursosTabla').innerHTML = '<table><tr><td colspan="7" class="cargando">Cargando</td></tr></table>';
-        const pag = await api('/cursos?size=50');
-        g('cursosTabla').innerHTML = pag.content.length
+        const lista = await cargarTodo('/cursos');
+        g('cursosTabla').innerHTML = lista.length
             ? '<table><thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Precio</th><th>Cupo</th><th>Fechas</th><th>Estado</th></tr></thead><tbody>'
-            + pag.content.map(c=>'<tr><td><b>'+c.codigo+'</b></td><td>'+c.nombre+'</td><td>'+c.tipo
+            + lista.map(c=>'<tr><td><b>'+c.codigo+'</b></td><td>'+c.nombre+'</td><td>'+c.tipo
                 +'</td><td>$'+c.precio+'</td><td>'+c.cupoMaximo+'</td><td>'+c.fechaInicio+' → '+c.fechaFin
                 +'</td><td>'+c.estado+'</td></tr>').join('')+'</tbody></table>'
             : '<p style="color:#6a748c">Aún no hay cursos registrados.</p>';
@@ -181,16 +175,16 @@ async function cargarCursos(){
 }
 async function cargarOpcionesCurso(){
     try{
-        const cats = await api('/categorias?size=50');
-        g('curCategoria').innerHTML = cats.content.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('');
+        const cats = await cargarTodo('/categorias');
+        g('curCategoria').innerHTML = cats.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('');
     }catch(e){ g('curCategoria').innerHTML = '<option value="">Error cargando categorías</option>'; }
     try{
-        const mods = await api('/modalidades?size=50');
-        g('curModalidad').innerHTML = mods.content.map(m=>`<option value="${m.id}">${m.nombre}</option>`).join('');
+        const mods = await cargarTodo('/modalidades');
+        g('curModalidad').innerHTML = mods.map(m=>`<option value="${m.id}">${m.nombre}</option>`).join('');
     }catch(e){ g('curModalidad').innerHTML = '<option value="">Error cargando modalidades</option>'; }
     try{
-        const docs = await api('/docentes?size=50&activo=true');
-        g('curDocente').innerHTML = docs.content.map(d=>`<option value="${d.id}">${d.nombres} ${d.apellidos}</option>`).join('');
+        const docs = await cargarTodo('/docentes','activo=true');
+        g('curDocente').innerHTML = docs.map(d=>`<option value="${d.id}">${d.nombres} ${d.apellidos}</option>`).join('');
     }catch(e){ g('curDocente').innerHTML = '<option value="">Error cargando docentes</option>'; }
 }
 async function crearCurso(){
@@ -217,10 +211,10 @@ async function crearCurso(){
 async function cargarClientes(){
     try{
         g('clientesTabla').innerHTML = '<table><tr><td colspan="7" class="cargando">Cargando</td></tr></table>';
-        const pag = await api('/clientes?size=50');
-        g('clientesTabla').innerHTML = pag.content.length
+        const lista = await cargarTodo('/clientes');
+        g('clientesTabla').innerHTML = lista.length
             ? '<table><thead><tr><th>ID</th><th>Tipo</th><th>Nombre</th><th>DUI</th><th>Correo</th><th>Teléfono</th><th>Estado</th></tr></thead><tbody>'
-            + pag.content.map(c=>'<tr><td>'+c.id+'</td><td>'+c.tipoCliente+'</td><td>'+c.nombre+'</td><td>'
+            + lista.map(c=>'<tr><td>'+c.id+'</td><td>'+c.tipoCliente+'</td><td>'+c.nombre+'</td><td>'
                 +(c.dui||'—')+'</td><td>'+c.correo+'</td><td>'+c.telefono
                 +'</td><td>'+(c.activo?'✅ Activo':'⛔ Inactivo')+'</td></tr>').join('')+'</tbody></table>'
             : '<p style="color:#6a748c">Aún no hay clientes registrados.</p>';
@@ -255,8 +249,8 @@ async function crearCliente(){
 async function cargarOpcionesInscripcion(){
     await cargarClientesCache();
     try{
-        const cur = await api('/cursos?size=500');
-        actualizarBuscador('insCurso', cur.content.filter(c=>c.estado==='PROGRAMADO'));
+        const cur = await cargarTodo('/cursos');
+        actualizarBuscador('insCurso', cur.filter(c=>c.estado==='PROGRAMADO'));
     }catch(e){ actualizarBuscador('insCurso', []); }
     listarInscripciones();
 }
@@ -273,12 +267,13 @@ async function crearInscripcion(){
 }
 async function listarInscripciones(){
     try{
-        const pag = await api('/inscripciones?size=20');
-        g('insTabla').innerHTML = pag.content.length
+        const lista = await cargarTodo('/inscripciones');
+        g('insTabla').innerHTML = lista.length
             ? '<table><thead><tr><th>Código</th><th>Cliente</th><th>Curso</th><th>Estado</th></tr></thead><tbody>'
-            + pag.content.map(i=>'<tr><td>'+i.codigo+'</td><td>'+i.clienteNombre+'</td><td>'+i.cursoNombre
+            + lista.map(i=>'<tr><td>'+i.codigo+'</td><td>'+i.clienteNombre+'</td><td>'+i.cursoNombre
                 +'</td><td>'+i.estado+'</td></tr>').join('')+'</tbody></table>'
             : '<p style="color:#6a748c">Aún no hay inscripciones.</p>';
+        paginarVista('insTabla');
     }catch(e){}
 }
 
@@ -311,6 +306,24 @@ async function rutaCatering(){
 
 /* Acepta Page de Spring ({content:[...]}) o array plano */
 const datosDe = r => Array.isArray(r) ? r : (r?.content || []);
+
+/* ═══ Carga TODAS las páginas que expone el backend (Spring Page) ═══
+   Los listados ya no dependen del ?size= del primer pedido: se traen
+   páginas de 200 hasta la última (tope de seguridad: 25 páginas = 5.000
+   registros) y el paginador de la UI se encarga de mostrarlos cómodos. */
+const PAG_BACKEND = 200, MAX_PAGINAS_BACKEND = 25;
+async function cargarTodo(ruta, extra=''){
+    let page = 0, out = [], totalPages = 1;
+    do{
+        const r = await api(ruta+'?page='+page+'&size='+PAG_BACKEND+(extra?'&'+extra:''));
+        const arr = datosDe(r);
+        out = out.concat(arr);
+        if (Array.isArray(r) || !arr.length) break;      // array plano o fin inesperado
+        totalPages = r.totalPages || 1;
+        page++;
+    } while (page < Math.min(totalPages, MAX_PAGINAS_BACKEND));
+    return out;
+}
 const nomEspacio = a => a.espacioNombre || a.espacio?.nombre || a.espacio?.codigo || ('Espacio #'+(a.espacioId ?? '—'));
 const nomCliente = a => a.clienteNombre || a.cliente?.nombre || ('Cliente #'+(a.clienteId ?? '—'));
 
@@ -334,9 +347,21 @@ function crearBuscador(id, placeholder, etiqueta, onSel){
     wrap.append(inp, lista);
     BUSQ[id] = { items:[], etiqueta, onSel, inp, lista, hidden };
     inp.addEventListener('focus', ()=>pintarBuscador(id));
-    inp.addEventListener('input', ()=>{ hidden.value = ''; pintarBuscador(id); });
-    inp.addEventListener('keydown', e=>{ if (e.key==='Escape') lista.classList.remove('abierto'); });
-    inp.addEventListener('blur', ()=> setTimeout(()=>lista.classList.remove('abierto'), 150));
+    inp.addEventListener('input', ()=>{ hidden.value=''; inp.classList.remove('incompleto'); pintarBuscador(id); });
+    inp.addEventListener('keydown', e=>{
+        if (e.key==='Escape'){ lista.classList.remove('abierto'); return; }
+        if (e.key!=='Enter') return;
+        e.preventDefault();                       // Enter = elegir: id exacto o 1.ª sugerencia
+        const st = BUSQ[id], txt = inp.value.trim();
+        const exacto = st.items.find(x=>String(x.id)===txt);
+        if (exacto){ seleccionarBuscador(id, exacto.id); return; }
+        const q = normTxt(txt);
+        const res = st.items.filter(it=>!q || normTxt(st.etiqueta(it)).includes(q));
+        if (res.length) seleccionarBuscador(id, res[0].id);
+    });
+    /* FIX “eso no debería pasar”: al salir del campo resolvemos lo tecleado aunque no
+       se haya hecho clic en una sugerencia — escribir "3" SÍ elige al cliente id 3. */
+    inp.addEventListener('blur', ()=>{ intentarAutoSeleccionar(id); setTimeout(()=>lista.classList.remove('abierto'), 150); });
     lista.addEventListener('mousedown', e=>{
         const item = e.target.closest('.res');
         if (item && item.dataset.id) seleccionarBuscador(id, item.dataset.id);
@@ -357,8 +382,27 @@ function seleccionarBuscador(id, valor){
     if (!it) return;
     st.hidden.value = it.id;
     st.inp.value = st.etiqueta(it);
+    st.inp.classList.remove('incompleto');
     st.lista.classList.remove('abierto');
     if (st.onSel) st.onSel(it);
+}
+/** Resuelve lo tecleado sin clic: 1) id exacto · 2) etiqueta exacta · 3) única coincidencia.
+ Si no coincide con nadie, marca el campo en rojo para avisar ANTES de guardar. */
+function intentarAutoSeleccionar(id){
+    const st = BUSQ[id];
+    if (!st) return false;
+    if (st.hidden.value){ st.inp.classList.remove('incompleto'); return true; }
+    const txt = st.inp.value.trim();
+    if (!txt) return false;
+    const q = normTxt(txt);
+    let it = st.items.find(x=>String(x.id)===txt);
+    if (!it){ const ex = st.items.filter(x=>normTxt(st.etiqueta(x))===q);
+        if (ex.length===1) it = ex[0]; }
+    if (!it){ const par = st.items.filter(x=>normTxt(st.etiqueta(x)).includes(q));
+        if (par.length===1) it = par[0]; }
+    if (it){ seleccionarBuscador(id, it.id); return true; }
+    st.inp.classList.add('incompleto');
+    return false;
 }
 function actualizarBuscador(id, items){
     if (!BUSQ[id]) return;
@@ -366,13 +410,32 @@ function actualizarBuscador(id, items){
     BUSQ[id].hidden.value = '';
     BUSQ[id].inp.value = '';
 }
-/** Filtro en vivo para las tablas: texto de búsqueda + desplegables .filtroSel combinados. */
-function filtrarTabla(inputId, tablaId){
-    const inp = g(inputId), tabla = g(tablaId);
-    if (!inp || !tabla) return;
+/* ═════════ PAGINACIÓN CLIENTE (preparada para muchos registros) ═════════
+   - Todas las tablas se parten en páginas de 10/25/50/100 filas.
+   - El filtrado (texto + desplegables) se aplica PRIMERO y el paginador
+     pagina el conjunto filtrado; al filtrar se vuelve a la página 1.
+   - El paginador se genera solo debajo de cada tabla (id: pag_<tablaId>). */
+const PAG_UI = {};                                   // tablaId -> {pagina, tamano, inputId, filas}
+const PAG_TAMANO_DEF = 10;
+
+function pagEstado(tablaId){
+    return PAG_UI[tablaId] ??= { pagina:1, tamano:PAG_TAMANO_DEF, inputId:null, filas:[] };
+}
+function filasDeTabla(tablaId){
+    const cont = g(tablaId);
+    return cont ? [...cont.querySelectorAll('table tbody tr')] : [];
+}
+/** Recalcula qué filas pasan los filtros y dibuja la página actual. */
+function refrescarTabla(tablaId, inputId){
+    const tabla = g(tablaId);
+    if (!tabla) return;
+    const st = pagEstado(tablaId);
+    if (inputId) st.inputId = inputId;
     poblarFiltros(tablaId);            // llena/actualiza los desplegables (conserva la opción elegida)
-    const q = normTxt(inp.value);
+    const inp = st.inputId ? g(st.inputId) : null;
+    const q = inp ? normTxt(inp.value) : '';
     const sels = [...document.querySelectorAll('select.filtroSel[data-tabla="'+tablaId+'"]')];
+    st.filas = [];
     tabla.querySelectorAll('tbody tr').forEach(tr=>{
         let mostrar = !q || normTxt(tr.textContent).includes(q);
         for (const sel of sels){
@@ -380,8 +443,72 @@ function filtrarTabla(inputId, tablaId){
             const celda = tr.children[+sel.dataset.col];
             if (!celda || !normTxt(celda.textContent).includes(normTxt(sel.value))) { mostrar = false; break; }
         }
-        tr.style.display = mostrar ? '' : 'none';
+        if (mostrar) st.filas.push(tr);
     });
+    const maxPag = Math.max(1, Math.ceil(st.filas.length / st.tamano));
+    if (st.pagina > maxPag) st.pagina = maxPag;
+    if (st.pagina < 1)      st.pagina = 1;
+    dibujarPagina(tablaId);
+}
+/** Compatibilidad: los oninput/onchange del HTML siguen llamando filtrarTabla(...). */
+function filtrarTabla(inputId, tablaId){
+    pagEstado(tablaId).pagina = 1;     // filtro nuevo → siempre vuelve a la página 1
+    refrescarTabla(tablaId, inputId);
+}
+/** Para tablas SIN barra de filtros (agenda, inscripciones, pagos, usuarios). */
+function paginarVista(tablaId){ refrescarTabla(tablaId); }
+function pagIr(tablaId, p){
+    pagEstado(tablaId).pagina = p;
+    refrescarTabla(tablaId);
+    g(tablaId)?.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+function pagTamano(tablaId, sel){
+    const st = pagEstado(tablaId);
+    st.tamano = Math.max(1, +sel.value || PAG_TAMANO_DEF);
+    st.pagina = 1;
+    refrescarTabla(tablaId);
+}
+/** Números de página con ventana móvil: 1 … 4 5 6 … 23 */
+function pagBotones(maxPag, actual){
+    const out = [], ini = Math.max(1, actual-2), fin = Math.min(maxPag, actual+2);
+    if (ini > 1){ out.push(1); if (ini > 2) out.push('…'); }
+    for (let p=ini; p<=fin; p++) out.push(p);
+    if (fin < maxPag){ if (fin < maxPag-1) out.push('…'); out.push(maxPag); }
+    return out;
+}
+function dibujarPagina(tablaId){
+    const st = pagEstado(tablaId), cont = g(tablaId);
+    if (!cont) return;
+    let caja = g('pag_'+tablaId);
+    if (!caja){
+        caja = document.createElement('div');
+        caja.id = 'pag_'+tablaId; caja.className = 'paginacion';
+        cont.appendChild(caja);
+    }
+    const hayTabla = cont.querySelector('table'), cargando = cont.querySelector('.cargando');
+    const total = st.filas.length;
+    if (!hayTabla || cargando || total===0){ caja.style.display='none'; return; }
+    const maxPag = Math.max(1, Math.ceil(total / st.tamano));
+    const ini = (st.pagina-1)*st.tamano, fin = Math.min(ini+st.tamano, total);
+
+    filasDeTabla(tablaId).forEach(tr=>{ tr.style.display='none'; });        // oculta TODO
+    st.filas.slice(ini, fin).forEach(tr=>{ tr.style.display=''; });         // muestra solo la página
+
+    let html = '<span class="info">Mostrando <b>'+(ini+1)+'–'+fin+'</b> de <b>'+total+'</b> registro'+(total===1?'':'s')
+        +(st.inputId && g(st.inputId)?.value ? ' (filtrados)' : '')+'</span>';
+    if (maxPag > 1){
+        html += '<button '+(st.pagina===1?'disabled':'')+' onclick="pagIr(\''+tablaId+'\',1)" title="Primera página">«</button>'
+            +   '<button '+(st.pagina===1?'disabled':'')+' onclick="pagIr(\''+tablaId+'\','+(st.pagina-1)+')" title="Anterior">‹</button>'
+            +   pagBotones(maxPag, st.pagina).map(p=> p==='…'
+                ? '<span class="puntos">…</span>'
+                : '<button class="'+(p===st.pagina?'activo':'')+'" onclick="pagIr(\''+tablaId+'\','+p+')">'+p+'</button>').join('')
+            +   '<button '+(st.pagina===maxPag?'disabled':'')+' onclick="pagIr(\''+tablaId+'\','+(st.pagina+1)+')" title="Siguiente">›</button>'
+            +   '<button '+(st.pagina===maxPag?'disabled':'')+' onclick="pagIr(\''+tablaId+'\','+maxPag+')" title="Última página">»</button>';
+    }
+    html += '<span class="tamano-pag">Por página <select onchange="pagTamano(\''+tablaId+'\',this)">'
+        + [10,25,50,100].map(n=>'<option '+(n===st.tamano?'selected':'')+'>'+n+'</option>').join('')
+        + '</select></span>';
+    caja.innerHTML = html;
 }
 /** Llena cada select .filtroSel con opciones fijas (data-opciones) + valores únicos de su columna (data-col). */
 function poblarFiltros(tablaId){
@@ -408,13 +535,30 @@ async function cargarVistaEspacios(){
 async function cargarVistaCatering(){
     cargarCatering();
     cargarClientesCache();
+    cargarLugaresCatering();
+}
+
+/* Llena el desplegable de lugar con los ESPACIOS reales de la BD + opción "Otro…" (catering a domicilio) */
+async function cargarLugaresCatering(){
+    const sel = g('catLugar');
+    if (!sel) return;
+    let opciones = '';
+    try{
+        const espacios = await cargarTodo(RUTAS.espacios);
+        espacios.forEach(e=>{
+            opciones += '<option value="'+(e.nombre||e.codigo)+'">'+(e.nombre||e.codigo)
+                +' — '+(e.tipo||'')+(e.capacidad?' (cap. '+e.capacidad+')':'')+'</option>';
+        });
+    }catch(e){ /* sin espacios cargables: queda solo la opción Otro */ }
+    sel.innerHTML = opciones + '<option value="__otro">Otro lugar (escribir)…</option>';
+    const otro = g('catLugarOtro');
+    sel.onchange = ()=> otro && otro.classList.toggle('hidden', sel.value!=='__otro');
 }
 
 /* Carga la lista de clientes UNA vez y alimenta todos los buscadores de cliente */
 async function cargarClientesCache(){
     try{
-        const resp = await api('/clientes?size=500');
-        CLIENTES_CACHE = datosDe(resp);
+        CLIENTES_CACHE = await cargarTodo('/clientes');
         ['insCliente','alqCliente','catCliente'].forEach(id=>actualizarBuscador(id, CLIENTES_CACHE));
     }catch(e){ /* los buscadores quedan con lo que tengan */ }
 }
@@ -422,8 +566,7 @@ async function cargarClientesCache(){
 async function cargarEspacios(){
     try{
         g('espaciosTabla').innerHTML = '<table><tr><td colspan="6" class="cargando">Cargando</td></tr></table>';
-        const resp = await api(RUTAS.espacios+'?size=500');
-        const lista = datosDe(resp);
+        const lista = await cargarTodo(RUTAS.espacios);
         // El campo del costo/hora cambia de nombre según el DTO del backend: probamos los habituales
         const costoDe = e => e.costoHora ?? e.precioHora ?? e.costoPorHora ?? e.tarifaHora ?? e.precioPorHora;
         g('espaciosTabla').innerHTML = lista.length
@@ -433,7 +576,7 @@ async function cargarEspacios(){
                 return '<tr><td><b>'+(e.codigo||e.id)+'</b></td><td>'+(e.nombre||'—')+'</td><td>'+(e.tipo||'—')
                     +'</td><td>'+(e.capacidad??'—')+'</td><td>'+(ch!=null?'$'+ch:'—')
                     +'</td><td>'+(e.activo===false?'⛔ Inactivo':'✅ Activo')+'</td></tr>';
-              }).join('')+'</tbody></table>'
+            }).join('')+'</tbody></table>'
             : '<p style="color:#6a748c">Aún no hay espacios registrados.</p>';
         actualizarBuscador('alqEspacio', lista);
         filtrarTabla('filtroEspacios','espaciosTabla');
@@ -463,9 +606,13 @@ async function crearEspacio(){
 
 async function crearAlquiler(){
     const v = id => g(id).value;
-    if (!v('alqEspacio') || !v('alqCliente') || !v('alqFecha') || !v('alqInicio') || !v('alqFin')) {
-        banner('❌ Completa espacio, cliente, fecha y horario de la reserva.','err'); return;
-    }
+    const faltan = [];
+    if (!v('alqEspacio')) faltan.push('espacio (escribe y elige una sugerencia)');
+    if (!v('alqCliente')) faltan.push('cliente (escribe y elige una sugerencia)');
+    if (!v('alqFecha'))   faltan.push('fecha');
+    if (!v('alqInicio'))  faltan.push('hora de inicio');
+    if (!v('alqFin'))     faltan.push('hora de fin');
+    if (faltan.length){ banner('❌ Falta completar: '+faltan.join(' · ')+'.','err'); return; }
     if (v('alqFin') <= v('alqInicio')) {
         banner('❌ La hora fin debe ser posterior a la hora inicio.','err'); return;
     }
@@ -484,17 +631,98 @@ async function crearAlquiler(){
     }catch(e){ banner('❌ '+e.message,'err'); }
 }
 
+/* ── Gestión del ciclo de vida (confirmar / rechazar / finalizar) ──
+   ADMIN y RECEPCIONISTA gestionan el estado de reservas y caterings desde la tabla.
+   Mappings CONFIRMADOS del backend (AlquilerController):
+     PATCH /alquileres/{id}/confirmar · /{id}/finalizar · /{id}/cancelar?motivo=…
+   CateringServiceImpl tiene los mismos métodos; si su Controller usa otro mapping,
+   el autodetectar de abajo lo encuentra igual (y memoriza el que funcione). */
+const ACCION_ESTADO = {
+    alquileres: { confirmar:'CONFIRMADA', cancelar:'CANCELADA', finalizar:'FINALIZADA' },
+    catering:   { confirmar:'CONFIRMADO', cancelar:'CANCELADO', finalizar:'FINALIZADO' }
+};
+const gestionaEstados = () => ROL==='ADMIN' || ROL==='RECEPCIONISTA';
+let patronEstadoOK = { alquileres:0, catering:0 };   // 0 = PATCH /{id}/{accion} (convención del proyecto)
+const patronesEstado = base => [
+    (id,acc)    =>({ ruta:base+'/'+id+'/'+acc,        metodo:'PATCH', cuerpo:null }),   // ← el que usa el backend
+    (id,acc,est)=>({ ruta:base+'/'+id+'/estado/'+est, metodo:'PATCH', cuerpo:null }),
+    (id,acc,est)=>({ ruta:base+'/'+id+'/estado',      metodo:'PATCH', cuerpo:{estado:est} }),
+    (id,acc,est)=>({ ruta:base+'/'+id,                metodo:'PATCH', cuerpo:{estado:est} }),
+    (id,acc)    =>({ ruta:base+'/'+id+'/'+acc,        metodo:'PUT',   cuerpo:null }),
+    (id,acc)    =>({ ruta:base+'/'+id+'/'+acc,        metodo:'POST',  cuerpo:null })
+];
+async function apiCambiarEstado(clave, id, accion, motivo){
+    const base = clave==='catering' ? await rutaCatering() : RUTAS.alquileres;
+    const sufijo = (motivo && accion==='cancelar') ? '?motivo='+encodeURIComponent(motivo) : '';
+    const patrones = patronesEstado(base);
+    const orden = patronEstadoOK[clave]!=null ? [patronEstadoOK[clave]] : patrones.map((_,i)=>i);
+    let ultimo = null;
+    for (const i of orden){
+        const p = patrones[i](id, accion, ACCION_ESTADO[clave][accion]);
+        try{
+            const r = await api(p.ruta+sufijo, p.metodo, p.cuerpo);
+            patronEstadoOK[clave] = i;        // este patrón funcionó: lo reutilizamos en adelante
+            return r;
+        }catch(e){
+            if (e.status!==404 && e.status!==405) throw e;   // 400/401/403 = error real → se muestra
+            ultimo = e;                                      // 404/405 = ese endpoint no existe → siguiente
+        }
+    }
+    throw { message:'Tu backend no expone un endpoint de cambio de estado para '
+            +(clave==='catering'?'el catering':'la reserva')
+            +'. Revisa los @PatchMapping del Controller (guía en backend-gestion-estados.md).'};
+}
+function botonEstado(fn, id, accion, txt, cls){
+    return '<button class="btn-estado '+cls+'" onclick="'+fn+'('+id+',\''+accion+'\')">'+txt+'</button>';
+}
+function botonesEstadoAlquiler(a){
+    if (!gestionaEstados()) return '<span style="color:#8a93ab">—</span>';
+    const est = (a.estado||'').toUpperCase();
+    if (est==='PENDIENTE')  return botonEstado('cambiarEstadoAlquiler',a.id,'confirmar','✔ Confirmar','ok')
+        +' '+botonEstado('cambiarEstadoAlquiler',a.id,'cancelar','✖ Rechazar','no');
+    if (est==='CONFIRMADA') return botonEstado('cambiarEstadoAlquiler',a.id,'finalizar','🏁 Finalizar','fin')
+        +' '+botonEstado('cambiarEstadoAlquiler',a.id,'cancelar','✖ Cancelar','no');
+    return '<span style="color:#8a93ab">—</span>';
+}
+async function cambiarEstadoAlquiler(id, accion){
+    try{
+        const motivo = accion==='cancelar' ? ((prompt('Motivo de la cancelación (opcional):')||'').trim()) : null;
+        const a = await apiCambiarEstado('alquileres', id, accion, motivo);
+        banner('✅ Reserva '+((a&&a.codigo)||('#'+id))+' actualizada a '+((a&&a.estado)||ACCION_ESTADO.alquileres[accion])+'.','ok');
+        cargarAlquileres();
+        if (puede('agenda') && !g('agenda').classList.contains('hidden')) cargarAgenda();
+    }catch(e){ banner('❌ '+e.message,'err'); }
+}
+function botonesEstadoCatering(c){
+    if (!gestionaEstados()) return '<span style="color:#8a93ab">—</span>';
+    const est = (c.estado||'').toUpperCase();
+    if (est==='PENDIENTE')  return botonEstado('cambiarEstadoCatering',c.id,'confirmar','✔ Confirmar','ok')
+        +' '+botonEstado('cambiarEstadoCatering',c.id,'cancelar','✖ Rechazar','no');
+    if (est==='CONFIRMADO') return botonEstado('cambiarEstadoCatering',c.id,'finalizar','🏁 Finalizar','fin')
+        +' '+botonEstado('cambiarEstadoCatering',c.id,'cancelar','✖ Cancelar','no');
+    return '<span style="color:#8a93ab">—</span>';
+}
+async function cambiarEstadoCatering(id, accion){
+    try{
+        const motivo = accion==='cancelar' ? ((prompt('Motivo de la cancelación (opcional):')||'').trim()) : null;
+        const c = await apiCambiarEstado('catering', id, accion, motivo);
+        banner('✅ Catering '+((c&&c.codigo)||('#'+id))+' actualizado a '+((c&&c.estado)||ACCION_ESTADO.catering[accion])+'.','ok');
+        cargarCatering();
+        if (puede('agenda') && !g('agenda').classList.contains('hidden')) cargarAgenda();
+    }catch(e){ banner('❌ '+e.message,'err'); }
+}
+
 async function cargarAlquileres(){
     try{
-        g('alquileresTabla').innerHTML = '<table><tr><td colspan="7" class="cargando">Cargando</td></tr></table>';
-        const resp = await api(RUTAS.alquileres+'?size=50');
-        const lista = datosDe(resp);
+        g('alquileresTabla').innerHTML = '<table><tr><td colspan="8" class="cargando">Cargando</td></tr></table>';
+        const lista = await cargarTodo(RUTAS.alquileres);
         g('alquileresTabla').innerHTML = lista.length
-            ? '<table><thead><tr><th>Código</th><th>Espacio</th><th>Cliente</th><th>Fecha</th><th>Horario</th><th>Estado</th><th>Costo</th></tr></thead><tbody>'
+            ? '<table><thead><tr><th>Código</th><th>Espacio</th><th>Cliente</th><th>Fecha</th><th>Horario</th><th>Estado</th><th>Costo</th><th>Acciones</th></tr></thead><tbody>'
             + lista.map(a=>'<tr><td><b>'+(a.codigo||a.id)+'</b></td><td>'+nomEspacio(a)+'</td><td>'+nomCliente(a)
                 +'</td><td>'+(a.fecha||'—')+'</td><td>'+(a.horaInicio||'?')+'–'+(a.horaFin||'?')
                 +'</td><td>'+(a.estado||'—')+'</td><td>'+(a.costoTotal!=null?'$'+a.costoTotal
-                    :(a.costo!=null?'$'+a.costo:(a.total!=null?'$'+a.total:'—')))+'</td></tr>').join('')+'</tbody></table>'
+                    :(a.costo!=null?'$'+a.costo:(a.total!=null?'$'+a.total:'—')))+'</td>'
+                +'<td>'+botonesEstadoAlquiler(a)+'</td></tr>').join('')+'</tbody></table>'
             : '<p style="color:#6a748c">Aún no hay reservas de espacios.</p>';
         filtrarTabla('filtroAlquileres','alquileresTabla');
     }catch(e){ g('alquileresTabla').innerHTML = '<p style="color:var(--err)">'+e.message+'</p>'; }
@@ -503,17 +731,18 @@ async function cargarAlquileres(){
 // ───────── CATERING ─────────
 async function cargarCatering(){
     try{
-        g('cateringTabla').innerHTML = '<table><tr><td colspan="7" class="cargando">Cargando</td></tr></table>';
-        const resp = await api(await rutaCatering()+'?size=500');
-        const lista = datosDe(resp);
+        g('cateringTabla').innerHTML = '<table><tr><td colspan="8" class="cargando">Cargando</td></tr></table>';
+        const lista = await cargarTodo(await rutaCatering());
         g('cateringTabla').innerHTML = lista.length
-            ? '<table><thead><tr><th>Código</th><th>Cliente</th><th>Fecha</th><th>Asistentes</th><th>Precio p/p</th><th>Total</th><th>Estado</th></tr></thead><tbody>'
+            ? '<table><thead><tr><th>Código</th><th>Cliente</th><th>Fecha</th><th>Asistentes</th><th>Precio p/p</th><th>Total</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>'
             + lista.map(c=>{
                 const pp  = c.precioPersona ?? c.precioPorPersona ?? c.precio;
                 const tot = c.total ?? c.costoTotal ?? c.montoTotal;
-                return '<tr><td><b>'+(c.codigo||c.id)+'</b></td><td>'+nomCliente(c)+'</td><td>'+(c.fechaEvento||c.fecha||'—')                    +'</td><td>'+(c.asistentes ?? c.numeroAsistentes ?? '—')+'</td><td>'+(pp!=null?'$'+pp:'—')
-                    +'</td><td><b>'+(tot!=null?'$'+tot:'—')+'</b></td><td>'+(c.estado||'—')+'</td></tr>';
-              }).join('')+'</tbody></table>'
+                return '<tr><td><b>'+(c.codigo||c.id)+'</b></td><td>'+nomCliente(c)+'</td><td>'+(c.fechaEvento||c.fecha||'—')
+                    +'</td><td>'+(c.asistentes ?? c.numeroAsistentes ?? '—')+'</td><td>'+(pp!=null?'$'+pp:'—')
+                    +'</td><td><b>'+(tot!=null?'$'+tot:'—')+'</b></td><td>'+(c.estado||'—')+'</td>'
+                    +'<td>'+botonesEstadoCatering(c)+'</td></tr>';
+            }).join('')+'</tbody></table>'
             : '<p style="color:#6a748c">Aún no hay servicios de catering.</p>';
         filtrarTabla('filtroCatering','cateringTabla');
     }catch(e){ g('cateringTabla').innerHTML = '<p style="color:var(--err)">'+e.message+'</p>'; }
@@ -521,22 +750,27 @@ async function cargarCatering(){
 
 async function crearCatering(){
     const v = id => g(id).value;
-    if (!v('catCliente') || !v('catFecha') || !v('catAsistentes') || !v('catPrecio')) {
-        banner('❌ Completa cliente, fecha, asistentes y precio por persona.','err'); return;
-    }
+    const faltan = [];
+    if (!v('catCliente'))    faltan.push('cliente (escribe y elige una sugerencia)');
+    if (!v('catFecha'))      faltan.push('fecha del evento');
+    if (!v('catAsistentes')) faltan.push('número de asistentes');
+    if (!v('catPrecio'))     faltan.push('precio por persona');
+    if (faltan.length){ banner('❌ Falta completar: '+faltan.join(' · ')+'.','err'); return; }
     try{
         const c = await api(RUTA_CATERING_FIJA,'POST',{
-            clienteId:+v('catCliente'),
+            clienteId:+v('catCliente'), cotizacionId:g('cotizacionId')?(v('cotizacionId')||null):null,
+            tipoServicio:v('catTipo'),
             fechaEvento:v('catFecha'), fecha:v('catFecha'),
+            horaEntrega:v('catHora')||null,
+            lugar:(v('catLugar')==='__otro' ? v('catLugarOtro').trim() : v('catLugar'))||null,
             numeroAsistentes:+v('catAsistentes'), asistentes:+v('catAsistentes'),
             precioPorPersona:+v('catPrecio'), precioPersona:+v('catPrecio'), precio:+v('catPrecio'),
-            tipoServicio:v('catTipo'), horaEntrega:v('catHora')||null, lugar:v('catLugar').trim(),
             menu:v('catMenu').trim()||null, descripcion:v('catMenu').trim()||null,
             observaciones:v('catObs').trim()||null
         });
         const tot = c.total ?? c.costoTotal ?? c.montoTotal;
         banner('✅ Catering contratado'+(tot!=null?' — Total calculado por el backend: $'+tot:'')+'.','ok');
-        ['catFecha','catAsistentes','catPrecio','catMenu','catObs'].forEach(id=>g(id).value='');
+        ['catFecha','catAsistentes','catPrecio','catHora','catLugar','catLugarOtro','catMenu','catObs'].forEach(id=>g(id).value='');
         cargarCatering();
     }catch(e){ banner('❌ '+e.message,'err'); }
 }
@@ -544,8 +778,8 @@ async function crearCatering(){
 // ───────── PAGOS ─────────
 async function cargarOpcionesPago(){
     try{
-        const ins = await api('/inscripciones?size=200');
-        actualizarBuscador('pagIns', datosDe(ins));
+        const ins = await cargarTodo('/inscripciones');
+        actualizarBuscador('pagIns', ins);
     }catch(e){ actualizarBuscador('pagIns', []); }
 
     cargarPagosDeInscripcion();
@@ -555,22 +789,13 @@ async function registrarPago(){
         banner('❌ Selecciona una inscripción y escribe el monto.','err'); return;
     }
     try{
-        const monto = +g('pagMonto').value;
-        if (monto <= 0) { banner('❌ El monto debe ser mayor a $0.','err'); return; }
-        const r = await api('/pagos/resumen/inscripcion/'+g('pagIns').value);
-        if (monto > (+r.saldoPendiente) + 0.001) {
-            banner('❌ El pago ($'+monto.toFixed(2)+') excede el saldo pendiente ($'
-                +(+r.saldoPendiente).toFixed(2)+'). No se puede pagar de más.','err'); return;
-        }
         const p = await api('/pagos','POST',
-            { inscripcionId:+g('pagIns').value, monto:monto, metodoPago:g('pagMetodo').value });
+            { inscripcionId:+g('pagIns').value, monto:+g('pagMonto').value, metodoPago:g('pagMetodo').value });
         banner('✅ Pago '+p.codigo+' registrado por $'+p.monto+' ('+p.metodoPago+')','ok');
-        g('pagMonto').value='';
         cargarPagosDeInscripcion();
         verSaldo();
     }catch(e){ banner('❌ '+e.message,'err'); }
 }
-
 function animarSaldo(elemento, valorFinal){
     const objetivo = parseFloat(valorFinal), inicio = performance.now(), dur = 700;
     function paso(ahora){
@@ -599,10 +824,10 @@ async function verSaldo(){
 async function cargarPagosDeInscripcion(){
     if (!g('pagIns').value) { g('pagosTabla').innerHTML=''; return; }
     try{
-        const pag = await api('/pagos?inscripcionId='+g('pagIns').value+'&size=50');
-        g('pagosTabla').innerHTML = pag.content.length
+        const lista = await cargarTodo('/pagos', 'inscripcionId='+g('pagIns').value);
+        g('pagosTabla').innerHTML = lista.length
             ? '<table><thead><tr><th>Recibo</th><th>Monto</th><th>Método</th><th>Estado</th><th>Acción</th></tr></thead><tbody>'
-            + pag.content.map(p=>{
+            + lista.map(p=>{
                 let accion = '';
                 if (p.estado==='PENDIENTE')
                     accion = '<button class="primario" style="padding:6px 12px;margin:0" onclick="cambiarEstadoPago('+p.id+',\'PARCIAL\')">Validar (PARCIAL)</button>';
@@ -613,6 +838,7 @@ async function cargarPagosDeInscripcion(){
                     +'</td><td>'+p.estado+'</td><td>'+accion+'</td></tr>';
             }).join('')+'</tbody></table>'
             : '<p style="color:#6a748c">Esta inscripción aún no tiene pagos.</p>';
+        paginarVista('pagosTabla');
     }catch(e){ g('pagosTabla').innerHTML = '<p style="color:var(--err)">'+e.message+'</p>'; }
 }
 async function cambiarEstadoPago(id, nuevoEstado){
@@ -632,10 +858,11 @@ async function cargarUsuarios(){
     }
     try{
         g('usuariosTabla').innerHTML = '<table><tr><td colspan="5" class="cargando">Cargando</td></tr></table>';
-        const lista = await api('/usuarios');
+        const lista = await cargarTodo('/usuarios');
         g('usuariosTabla').innerHTML = '<table><thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Cambio pendiente</th></tr></thead><tbody>'
             + lista.map(u=>'<tr><td>'+u.nombre+'</td><td>'+u.correo+'</td><td><b>'+u.rol+'</b></td><td>'
                 +(u.activo?'✅':'⛔')+'</td><td>'+(u.debeCambiarPassword?'🔑 Sí':'—')+'</td></tr>').join('')+'</tbody></table>';
+        paginarVista('usuariosTabla');
     }catch(e){ g('usuariosTabla').innerHTML = '<p style="color:var(--err)">'+e.message+'</p>'; }
 }
 async function crearUsuario(){
