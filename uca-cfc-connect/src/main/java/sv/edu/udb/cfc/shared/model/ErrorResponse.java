@@ -6,9 +6,9 @@ import java.time.LocalDateTime;
 import java.util.Map;
 
 /**
- * Estructura uniforme de respuesta de error para TODA la API.
- * Campos: timestamp, status, error, message, path y detalles opcionales
- * (mapa campo → mensaje en errores de validación).
+ * Formato único de respuesta de error para toda la API.
+ * Incluye: timestamp, status, error, message, path y, de forma opcional,
+ * un mapa campo → mensaje con el detalle de los errores de validación.
  */
 public record ErrorResponse(
         LocalDateTime timestamp,
