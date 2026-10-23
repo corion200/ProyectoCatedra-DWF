@@ -11,7 +11,7 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
-    <!-- ⚠️ UN SOLO bloque de propiedades (estaban duplicados) -->
+    <!-- bloque de propiedades  -->
     <properties>
         <java.version>21</java.version>
         <lombok.version>1.18.38</lombok.version>
@@ -38,7 +38,7 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- ==================== PERSISTENCIA (JPA) ==================== -->
+        <!-- ==================== PERSISTENCIA  ==================== -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -50,7 +50,7 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
-        <!-- JWT (JJWT) para autenticación basada en tokens -->
+        <!-- JWT  para autenticación basada en tokens -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
@@ -96,7 +96,7 @@
             <version>${springdoc.version}</version>
         </dependency>
 
-        <!-- ==================== MAPEO DTO <-> ENTITY (MapStruct) ==================== -->
+        <!-- ==================== MAPEO DTO <-> (MapStruct) ==================== -->
         <dependency>
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct</artifactId>
