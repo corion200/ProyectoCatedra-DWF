@@ -286,6 +286,246 @@
     </main>
 </div>
 
-<script src="js/app.js"></script>
+        <div id="pagos" class="card hidden">
+            <h2>💰 Control de pagos (RF10, RF15)</h2>
+            <div class="grid2">
+                <div><label>ID inscripción</label><input id="pagIns" type="number"></div>
+                <div><label>Monto</label><input id="pagMonto" type="number" step="0.01"></div>
+            </div>
+            <label>Método</label>
+            <select id="pagMetodo"><option>EFECTIVO</option><option>TARJETA</option><option>TRANSFERENCIA</option><option>DEPOSITO</option></select>
+            <button class="primario" onclick="registrarPago()">Registrar pago</button>
+            <hr class="separador">
+            <button class="primario" onclick="verSaldo()">Consultar saldo</button>
+            <div id="saldoBox" style="margin-top:10px"></div>
+        </div>
+
+        <div id="usuarios" class="card hidden">
+            <h2>🔑 Gestión de usuarios</h2>
+            <div id="usuariosTabla"></div>
+            <hr class="separador">
+            <h2>Crear nuevo usuario (cuenta de acceso)</h2>
+            <label>Nombre completo</label><input id="usuNombre">
+            <label>Correo</label><input id="usuCorreo" type="email">
+            <label>Rol</label>
+            <select id="usuRol">
+                <option>CLIENTE</option><option>RECEPCIONISTA</option><option>CONTABILIDAD</option><option>ADMIN</option>
+            </select>
+            <div id="notaRolSoloCliente" class="nota-rol hidden">Como RECEPCIONISTA solo puedes crear cuentas de rol CLIENTE.</div>
+            <button class="primario" onclick="crearUsuario()">Crear usuario y generar contraseña temporal</button>
+            <div id="temporalBox" class="temporal-box hidden"></div>
+        </div>
+    </main>
+</div>
+
+<script>
+    const API = '/api/v1';
+    let TOKEN = localStorage.getItem('cfcToken'),
+        ROL   = localStorage.getItem('cfcRol'),
+        USER  = localStorage.getItem('cfcUser');
+
+    /** Matriz de permisos por rol (espejo de SecurityConfig + enunciado de roles). */
+    const PERMISOS = {
+        ADMIN:         ['agenda','cursos','clientes','inscripciones','pagos','usuarios'],
+        RECEPCIONISTA: ['agenda','cursos','clientes','inscripciones','usuarios'],
+        CONTABILIDAD:  ['cursos','pagos'],
+        CLIENTE:       ['cursos']
+    };
+    const PESTANA_INICIAL = { ADMIN:'agenda', RECEPCIONISTA:'agenda', CONTABILIDAD:'pagos', CLIENTE:'cursos' };
+
+    async function api(ruta, metodo='GET', cuerpo=null){
+        const r = await fetch(API+ruta, { method:metodo,
+            headers:{ 'Content-Type':'application/json', ...(TOKEN?{Authorization:'Bearer '+TOKEN}:{}) },
+            body: cuerpo ? JSON.stringify(cuerpo) : null });
+        if (r.ok) return r.status===204 ? null : r.json();
+        if (r.status === 403) throw { status:403, message:'Tu rol ('+ROL+') no tiene permiso para esta operación.' };
+        if (r.status === 401) throw { status:401, message:'Sesión no válida o expirada. Inicia sesión de nuevo.' };
+        let msg = 'Error del servidor ('+r.status+')';
+        try { const e = await r.json();
+            msg = e.message + (e.detalles ? ' — '+Object.entries(e.detalles).map(([k,v])=>k+': '+v).join(' · ') : '');
+        } catch(_) {}
+        throw { status:r.status, message:msg };
+    }
+    function banner(txt,tipo){ const b=document.getElementById('banner'); b.className='banner '+tipo; b.textContent=txt; }
+    function bannerLogin(txt,tipo){ const b=document.getElementById('bannerLogin'); b.className='banner '+tipo; b.textContent=txt; }
+    function bannerPass(txt,tipo){ const b=document.getElementById('bannerPass'); b.className='banner '+tipo; b.textContent=txt; }
+
+    async function login(){
+        try{
+            const t = await api('/auth/login','POST',{ correo:logCorreo.value.trim(), password:logPass.value });
+            setSesion(t);
+        }catch(e){ bannerLogin(e.status===401?'Correo o contraseña incorrectos.':e.message,'err'); }
+    }
+    function setSesion(t){
+        TOKEN=t.token; ROL=t.rol; USER=t.correo;
+        localStorage.setItem('cfcToken',TOKEN); localStorage.setItem('cfcRol',ROL); localStorage.setItem('cfcUser',USER);
+        if (t.debeCambiarPassword) { abrirCambioPass(true); return; }   // ⭐ cambio obligatorio
+        iniciarApp();
+    }
+    function logout(){ localStorage.clear(); location.reload(); }
+
+    function abrirCambioPass(obligatoria=false){
+        modalPass.classList.remove('hidden');
+        bannerPass('','');
+        modalPassAviso.textContent = obligatoria
+            ? 'Tu cuenta tiene una contraseña TEMPORAL generada por el sistema. Por seguridad debes establecer una nueva antes de continuar.'
+            : 'Establece una nueva contraseña para tu cuenta.';
+    }
+    async function guardarPassword(){
+        if (passNueva.value !== passNueva2.value) { bannerPass('Las nuevas contraseñas no coinciden.','err'); return; }
+        try{
+            await api('/auth/cambiar-password','PATCH',
+                { passwordActual:passActual.value, passwordNueva:passNueva.value });
+            modalPass.classList.add('hidden');
+            localStorage.clear(); TOKEN=ROL=USER=null;
+            bannerLogin('✅ Contraseña actualizada. Inicia sesión con tu nueva contraseña.','ok');
+            logPass.value='';
+        }catch(e){ bannerPass(e.message,'err'); }
+    }
+    async function olvidePass(){
+        try{
+            const r = await api('/auth/recuperar?correo='+encodeURIComponent(logCorreo.value.trim()),'POST');
+            bannerLogin('🔑 Contraseña temporal generada: '+r.contrasenaTemporal+' — úsela para entrar y deberá cambiarla.','ok');
+        }catch(e){ bannerLogin(e.message,'err'); }
+    }
+
+    function iniciarApp(){
+        vistaLogin.classList.add('hidden'); vistaApp.classList.remove('hidden');
+        sesionInfo.innerHTML = 'Sesión: <b>'+USER+'</b><span class="rol-badge">'+ROL+'</span>';
+        document.getElementById('agendaFecha').value = new Date().toISOString().slice(0,10);
+
+        const permitidas = PERMISOS[ROL] || [];
+        document.querySelectorAll('nav .tab-btn').forEach(b=>{
+            b.style.display = permitidas.includes(b.dataset.vista) ? '' : 'none';
+        });
+        if (ROL==='RECEPCIONISTA') notaRolSoloCliente.classList.remove('hidden');
+
+        const inicial = PESTANA_INICIAL[ROL] || 'cursos';
+        tab(inicial, document.querySelector('.tab-btn[data-vista="'+inicial+'"]'));
+        if (permitidas.includes('cursos')) cargarCursos();
+        if (permitidas.includes('usuarios')) cargarUsuarios();
+    }
+    function tab(id, btn){
+        document.querySelectorAll('nav .tab-btn').forEach(b=>b.classList.remove('activo'));
+        if (btn) btn.classList.add('activo');
+        ['agenda','cursos','clientes','inscripciones','pagos','usuarios']
+            .forEach(s=>document.getElementById(s).classList.toggle('hidden', s!==id));
+        if (id==='agenda' && !agendaTabla.innerHTML) cargarAgenda();
+        if (id==='clientes' && !clientesTabla.innerHTML) cargarClientes();
+        if (id==='usuarios' && !usuariosTabla.innerHTML) cargarUsuarios();
+    }
+
+    function spinner(cols){ return '<tr><td colspan="'+cols+'" class="cargando">Cargando</td></tr>'; }
+
+    async function cargarAgenda(){
+        try{
+            agendaTabla.innerHTML = '<table>'+spinner(5)+'</table>';
+            const items = await api('/agenda?fecha='+agendaFecha.value);
+            agendaTabla.innerHTML = items.length
+                ? '<table><thead><tr><th>Tipo</th><th>Actividad</th><th>Horario</th><th>Lugar</th><th>Estado</th></tr></thead><tbody>'
+                + items.map(i=>'<tr><td><b>'+i.tipo+'</b></td><td>'+i.titulo+'</td><td>'
+                    +(i.horaInicio||'todo el día')+(i.horaFin?' – '+i.horaFin:'')+'</td><td>'+i.lugar
+                    +'</td><td>'+i.estado+'</td></tr>').join('')+'</tbody></table>'
+                : '<p style="color:#6a748c">Sin actividades programadas para esta fecha.</p>';
+        }catch(e){ agendaTabla.innerHTML = '<p style="color:var(--err)">'+e.message+'</p>'; }
+    }
+    async function cargarCursos(){
+        try{
+            cursosTabla.innerHTML = '<table>'+spinner(7)+'</table>';
+            const pag = await api('/cursos?size=50');
+            cursosTabla.innerHTML = '<table><thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Precio</th><th>Cupo</th><th>Fechas</th><th>Estado</th></tr></thead><tbody>'
+                + pag.content.map(c=>'<tr><td><b>'+c.codigo+'</b></td><td>'+c.nombre+'</td><td>'+c.tipo+'</td><td>$'+c.precio
+                    +'</td><td>'+c.cupoMaximo+'</td><td>'+c.fechaInicio+' → '+c.fechaFin+'</td><td>'+c.estado+'</td></tr>').join('')+'</tbody></table>';
+        }catch(e){ cursosTabla.innerHTML = '<p style="color:var(--err)">'+e.message+'</p>'; }
+    }
+    async function cargarClientes(){
+        try{
+            clientesTabla.innerHTML = '<table>'+spinner(7)+'</table>';
+            const pag = await api('/clientes?size=50');
+            clientesTabla.innerHTML = pag.content.length
+                ? '<table><thead><tr><th>ID</th><th>Tipo</th><th>Nombre</th><th>DUI</th><th>Correo</th><th>Teléfono</th><th>Estado</th></tr></thead><tbody>'
+                + pag.content.map(c=>'<tr><td>'+c.id+'</td><td>'+c.tipoCliente+'</td><td>'+c.nombre+'</td><td>'
+                    +(c.dui||'—')+'</td><td>'+c.correo+'</td><td>'+c.telefono+'</td><td>'+(c.activo?'✅ Activo':'⛔ Inactivo')+'</td></tr>').join('')+'</tbody></table>'
+                : '<p style="color:#6a748c">Aún no hay clientes registrados.</p>';
+        }catch(e){ clientesTabla.innerHTML = '<p style="color:var(--err)">'+e.message+'</p>'; }
+    }
+    async function cargarUsuarios(){
+        try{
+            usuariosTabla.innerHTML = '<table>'+spinner(5)+'</table>';
+            const lista = await api('/usuarios');
+            usuariosTabla.innerHTML = '<table><thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Pendiente de cambio</th></tr></thead><tbody>'
+                + lista.map(u=>'<tr><td>'+u.nombre+'</td><td>'+u.correo+'</td><td><b>'+u.rol+'</b></td><td>'
+                    +(u.activo?'✅':'⛔')+'</td><td>'+(u.debeCambiarPassword?'🔑 Sí':'—')+'</td></tr>').join('')+'</tbody></table>';
+        }catch(e){ usuariosTabla.innerHTML = '<p style="color:var(--err)">'+e.message+'</p>'; }
+    }
+    function tipoCliente(){
+        const esEmpresa = cliTipo.value==='EMPRESA';
+        campoDui.classList.toggle('hidden', esEmpresa);
+        campoContacto.classList.toggle('hidden', !esEmpresa);
+    }
+    async function crearCliente(){
+        const esEmpresa = cliTipo.value==='EMPRESA';
+        try{
+            const c = await api('/clientes','POST',{ tipoCliente:cliTipo.value, nombre:cliNombre.value,
+                dui:esEmpresa?null:cliDui.value, nit:cliNit.value, correo:cliCorreo.value, telefono:cliTel.value,
+                contactoNombre:esEmpresa?cliContacto.value:null, direccion:cliDir.value });
+            banner('✅ Cliente creado: '+c.nombre+' (id '+c.id+')','ok');
+            clientesTabla.innerHTML=''; cargarClientes();
+        }catch(e){ banner('❌ '+e.message,'err'); }
+    }
+    async function crearUsuario(){
+        try{
+            const r = await api('/usuarios','POST',
+                { nombre:usuNombre.value.trim(), correo:usuCorreo.value.trim().toLowerCase(), rol:usuRol.value });
+            temporalBox.classList.remove('hidden');
+            temporalBox.innerHTML = '👤 <b>'+r.usuario.nombre+'</b> ('+r.usuario.correo+') creado con rol <b>'+r.usuario.rol
+                +'</b>.<br>🔑 Contraseña temporal: <code>'+ (r.contrasenaTemporal || '(ver consola del backend)') +'</code>'
+                +'<br><small>En producción se envía por email; el sistema obligará a cambiarla al primer inicio de sesión.</small>';
+            usuariosTabla.innerHTML=''; cargarUsuarios();
+        }catch(e){ temporalBox.classList.add('hidden'); banner('❌ '+e.message,'err'); }
+    }
+    async function crearInscripcion(){
+        try{
+            const i = await api('/inscripciones','POST',{ clienteId:+insCliente.value, cursoId:+insCurso.value });
+            banner('✅ Inscripción '+i.codigo+' registrada ('+i.clienteNombre+' → '+i.cursoNombre+', estado '+i.estado+')','ok');
+            insTabla.innerHTML=''; listarInscripciones();
+        }catch(e){ banner('❌ '+e.message,'err'); }
+    }
+    async function listarInscripciones(){
+        try{
+            const pag = await api('/inscripciones?size=20');
+            insTabla.innerHTML = '<table><thead><tr><th>Código</th><th>Cliente</th><th>Curso</th><th>Estado</th></tr></thead><tbody>'
+                + pag.content.map(i=>'<tr><td>'+i.codigo+'</td><td>'+i.clienteNombre+'</td><td>'+i.cursoNombre
+                    +'</td><td>'+i.estado+'</td></tr>').join('')+'</tbody></table>';
+        }catch(e){}
+    }
+    async function registrarPago(){
+        try{
+            const p = await api('/pagos','POST',{ inscripcionId:+pagIns.value, monto:+pagMonto.value, metodoPago:pagMetodo.value });
+            banner('✅ Pago '+p.codigo+' registrado por $'+p.monto+' ('+p.metodoPago+')','ok');
+        }catch(e){ banner('❌ '+e.message,'err'); }
+    }
+    /** Contador animado del saldo: de 0 al valor real en ~700ms. */
+    function animarSaldo(elemento, valorFinal){
+        const objetivo = parseFloat(valorFinal), inicio = performance.now(), dur = 700;
+        function paso(ahora){
+            const progreso = Math.min((ahora-inicio)/dur, 1);
+            const facil = 1 - Math.pow(1-progreso, 3);   // easeOutCubic
+            elemento.textContent = '$' + (objetivo*facil).toFixed(2);
+            if (progreso < 1) requestAnimationFrame(paso);
+        }
+        requestAnimationFrame(paso);
+    }
+    async function verSaldo(){
+        try{
+            const r = await api('/pagos/resumen/inscripcion/'+pagIns.value);
+            saldoBox.innerHTML = '<p>Curso: <b>$'+r.precioCurso+'</b> · Pagado: <b>$'+r.totalPagado+'</b><br>'
+                +'Saldo pendiente: <span class="saldo" id="saldoNum">$0.00</span></p>';
+            animarSaldo(document.getElementById('saldoNum'), r.saldoPendiente);
+        }catch(e){ saldoBox.innerHTML = '<p style="color:var(--err)">'+e.message+'</p>'; }
+    }
+
+    if (TOKEN) iniciarApp();
+</script>
 </body>
 </html>
