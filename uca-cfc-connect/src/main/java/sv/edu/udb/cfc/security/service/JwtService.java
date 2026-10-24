@@ -44,7 +44,7 @@ public class JwtService {
     public String extraerCorreo(String token) {
         return parseClaims(token).getSubject();
     }
-
+    /** Válido si la firma es correcta, el correo coincide con el usuario y no ha expirado. Cualquier token mal formado devuelve false. */
     public boolean esTokenValido(String token, UserDetails userDetails) {
         try {
             Claims claims = parseClaims(token);
