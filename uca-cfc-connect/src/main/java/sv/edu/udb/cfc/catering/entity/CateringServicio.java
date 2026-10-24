@@ -28,6 +28,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
+// Servicio de catering que contrata un cliente (tabla catering_servicios)
 @Entity
 @Table(name = "catering_servicios")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
@@ -37,13 +38,16 @@ public class CateringServicio {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // código de negocio, no se puede repetir
     @Column(nullable = false, unique = true, length = 20)
     private String codigo;
 
+    // cliente que contrata, obligatorio
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "cliente_id", nullable = false)
     private Cliente cliente;
 
+    // puede venir de una cotización, pero no es obligatorio
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cotizacion_id")
     private Cotizacion cotizacion;
@@ -70,18 +74,20 @@ public class CateringServicio {
     @Column(name = "precio_por_persona", nullable = false, precision = 10, scale = 2)
     private BigDecimal precioPorPersona;
 
-    /** Se calcula en servicio: precioPorPersona × numeroAsistentes. */
+    // se calcula en el servicio: precioPorPersona × numeroAsistentes
     @Column(name = "costo_total", nullable = false, precision = 12, scale = 2)
     private BigDecimal costoTotal;
 
     @Column(length = 500)
     private String observaciones;
 
+    // arranca en PENDIENTE (el Builder.Default evita que el builder lo deje null)
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     @Builder.Default
     private EstadoCatering estado = EstadoCatering.PENDIENTE;
 
+    // las fechas las maneja Hibernate solo
     @CreationTimestamp
     @Column(name = "fecha_creacion", nullable = false, updatable = false)
     private LocalDateTime fechaCreacion;
