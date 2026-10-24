@@ -31,12 +31,19 @@ import sv.edu.udb.cfc.venue.service.AlquilerService;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * Controlador REST para la gestión de alquileres (reservas) de espacios.
+ * Expone operaciones de registro, consulta con filtros, reprogramación y
+ * cambio de estado (confirmar, finalizar, cancelar).
+ */
+
 @Tag(name = "Alquileres", description = "Reservas de espacios con detección de solapamiento de horarios")
 @RestController
 @RequestMapping("/api/v1/alquileres")
 @RequiredArgsConstructor
 public class AlquilerController {
 
+    /** Servicio con la lógica de negocio de los alquileres. */
     private final AlquilerService alquilerService;
 
     @Operation(summary = "Registra una reserva (calcula el costo y rechaza horarios que se crucen)")
