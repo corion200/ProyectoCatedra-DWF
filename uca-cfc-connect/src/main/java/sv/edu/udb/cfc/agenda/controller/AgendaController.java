@@ -14,19 +14,23 @@ import sv.edu.udb.cfc.agenda.service.AgendaService;
 import java.time.LocalDate;
 import java.util.List;
 
-@Tag(name = "Agenda Institucional (Módulo 7)", description = "Calendario consolidado: cursos, alquileres y catering por fecha")
+// Controlador de la agenda del centro
+@Tag(name = "Agenda Institucional (Módulo 7)", description = "Agenda del centro con cursos, alquileres y catering de un día")
 @RestController
 @RequestMapping("/api/v1/agenda")
 @RequiredArgsConstructor
 public class AgendaController {
 
+    // Servicio que arma la agenda
     private final AgendaService agendaService;
 
-    @Operation(summary = "Agenda de una fecha: todas las actividades del centro ordenadas por hora")
+    // Devuelve las actividades de un día ordenadas por hora
+    @Operation(summary = "Ver la agenda de un día, ordenada por hora")
     @GetMapping
     public List<AgendaItemDTO> obtenerAgenda(
-
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
+            // Fecha a consultar (formato yyyy-MM-dd)
+            @RequestParam("fecha") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
+        // Pide los datos al servicio
         return agendaService.obtenerAgenda(fecha);
     }
 }
