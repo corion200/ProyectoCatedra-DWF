@@ -22,8 +22,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * Manejo centralizado de excepciones para TODA la API.
- * Garantiza que todo error devuelva la estructura uniforme ErrorResponse
+ * Punto único de manejo de excepciones para toda la API.
+ * Asegura que cualquier error responda con la misma estructura ErrorResponse
  * (timestamp, status, error, message, path, detalles).
  */
 @RestControllerAdvice
@@ -31,19 +31,19 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    /** 404 – Recurso no encontrado (entidad buscada por id inexistente). */
+    /** 404 – Recurso no encontrado (se buscó una entidad con un id que no existe). */
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleNotFound(ResourceNotFoundException ex, HttpServletRequest req) {
         return build(HttpStatus.NOT_FOUND, ex.getMessage(), req, null);
     }
 
-    /** 400/409 – Regla de negocio violada (cupo agotado, duplicados, transición inválida...). */
+    /** 400/409 – Se incumplió una regla de negocio (cupo agotado, duplicados, transición inválida...). */
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorResponse> handleBusiness(BusinessException ex, HttpServletRequest req) {
         return build(ex.getStatus(), ex.getMessage(), req, null);
     }
 
-    /** 400 – Validaciones de DTOs (@Valid): devuelve mapa campo → mensaje. */
+    /** 400 – Falló la validación de un DTO (@Valid): responde un mapa campo → mensaje. */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex,
                                                           HttpServletRequest req) {
@@ -56,7 +56,7 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.BAD_REQUEST, "La solicitud contiene datos inválidos", req, errores);
     }
 
-    /** 400 – Validaciones sobre @RequestParam / @PathVariable. */
+    /** 400 – Falló una validación sobre @RequestParam o @PathVariable. */
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ErrorResponse> handleConstraint(ConstraintViolationException ex,
                                                           HttpServletRequest req) {
@@ -68,7 +68,7 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.BAD_REQUEST, "Parámetros de la solicitud inválidos", req, errores);
     }
 
-    /** 400 – Enum o tipo inválido en la URL (ej: PATCH /cursos/1/estado/INVENTADO). */
+    /** 400 – Se envió un enum o tipo no válido en la URL (ej: PATCH /cursos/1/estado/INVENTADO). */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex,
                                                             HttpServletRequest req) {
@@ -81,14 +81,14 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.BAD_REQUEST, mensaje, req, null);
     }
 
-    /** 400 – JSON malformado o con tipos incorrectos en el body. */
+    /** 400 – El body llegó con JSON mal formado o con tipos de dato incorrectos. */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleUnreadable(HttpMessageNotReadableException ex,
                                                           HttpServletRequest req) {
         return build(HttpStatus.BAD_REQUEST, "El cuerpo de la solicitud es inválido o está mal formado", req, null);
     }
 
-    /** 409 – Violación de UNIQUE/FK a nivel BD (red de seguridad). */
+    /** 409 – Violación de UNIQUE o FK detectada en la base de datos (como respaldo). */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleIntegrity(DataIntegrityViolationException ex,
                                                          HttpServletRequest req) {
@@ -96,7 +96,7 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.CONFLICT, "La operación viola una restricción de integridad de datos", req, null);
     }
 
-    /** 500 – Error no controlado. No expone detalles internos al cliente. */
+    /** 500 – Error inesperado. No se exponen detalles internos al cliente. */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneric(Exception ex, HttpServletRequest req) {
         log.error("Error no controlado", ex);
