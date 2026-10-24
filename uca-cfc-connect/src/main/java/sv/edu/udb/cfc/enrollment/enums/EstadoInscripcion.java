@@ -4,6 +4,7 @@ package sv.edu.udb.cfc.enrollment.enums;
 public enum EstadoInscripcion {
     PENDIENTE,
     CONFIRMADA,
+    PAGADA,
     CANCELADA,
     FINALIZADA
 }
