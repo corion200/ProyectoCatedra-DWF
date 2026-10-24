@@ -25,7 +25,16 @@ import sv.edu.udb.cfc.quotation.enums.TipoCotizacion;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-
+/**
+ * Entidad que representa una cotización comercial, mapeada a la tabla {@code cotizaciones}.
+ * <ul>
+ *   <li>{@code codigo}: identificador legible y único (ej. COT-2026-00001).</li>
+ *   <li>{@code cliente}: relación muchos-a-uno con Cliente (carga perezosa).</li>
+ *   <li>{@code tipo}: curso empresarial, diplomado, alquiler de espacio o catering.</li>
+ *   <li>{@code estado}: inicia en PENDIENTE.</li>
+ *   <li>{@code fechaCreacion}/{@code fechaActualizacion}: las llena Hibernate automáticamente.</li>
+ * </ul>
+ */
 @Entity
 @Table(name = "cotizaciones")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
