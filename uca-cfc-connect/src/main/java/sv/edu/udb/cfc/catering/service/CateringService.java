@@ -17,8 +17,7 @@ public interface CateringService {
 
     CateringResponseDTO obtenerPorId(Long id);
 
-    Page<CateringResponseDTO> listar(Long clienteId, EstadoCatering estado,
-                                     LocalDate fecha, Pageable pageable);
+    Page<CateringResponseDTO> listar(Long clienteId, EstadoCatering estado, LocalDate fecha, Pageable pageable);
 
     CateringResponseDTO confirmar(Long id);
 

@@ -53,7 +53,7 @@ public class CateringServiceImpl implements CateringService {
                 .menu(dto.menu().trim())
                 .fechaEvento(dto.fechaEvento())
                 .horaEntrega(dto.horaEntrega())
-                .lugar(dto.lugar().trim())
+                .lugar(dto.lugar() == null ? null : dto.lugar().trim())
                 .precioPorPersona(dto.precioPorPersona())
                 .costoTotal(calcularCosto(dto.precioPorPersona(), dto.numeroAsistentes()))
                 .observaciones(dto.observaciones())
@@ -75,7 +75,7 @@ public class CateringServiceImpl implements CateringService {
         catering.setMenu(dto.menu().trim());
         catering.setFechaEvento(dto.fechaEvento());
         catering.setHoraEntrega(dto.horaEntrega());
-        catering.setLugar(dto.lugar().trim());
+        catering.setLugar(dto.lugar() == null ? null : dto.lugar().trim());
         catering.setPrecioPorPersona(dto.precioPorPersona());
         // REGLA: el costo SIEMPRE se recalcula si cambian precio o asistentes
         catering.setCostoTotal(calcularCosto(dto.precioPorPersona(), dto.numeroAsistentes()));

@@ -8,6 +8,7 @@ import sv.edu.udb.cfc.venue.entity.Espacio;
 import sv.edu.udb.cfc.venue.enums.TipoEspacio;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface EspacioRepository extends JpaRepository<Espacio, Long>, JpaSpecificationExecutor<Espacio> {
     boolean existsByCodigoIgnoreCase(String codigo);
@@ -21,4 +22,7 @@ public interface EspacioRepository extends JpaRepository<Espacio, Long>, JpaSpec
 
     /** Filtro "busco espacio para N personas". */
     Page<Espacio> findByCapacidadGreaterThanEqual(Integer capacidad, Pageable pageable);
+
+    Optional<Espacio> findByCodigo(String codigo);
+
 }
