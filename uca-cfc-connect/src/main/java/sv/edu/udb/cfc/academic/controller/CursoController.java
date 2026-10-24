@@ -28,7 +28,7 @@ import sv.edu.udb.cfc.academic.enums.EstadoCurso;
 import sv.edu.udb.cfc.academic.enums.TipoOferta;
 import sv.edu.udb.cfc.academic.service.CursoService;
 
-@Tag(name = "Cursos y Diplomados", description = "Oferta académica del CFC (cursos cortos y diplomados)")
+@Tag(name = "Cursos y Diplomados", description = "Gestión de la oferta académica del CFC (cursos cortos y diplomados)")
 @RestController
 @RequestMapping("/api/v1/cursos")
 @RequiredArgsConstructor
@@ -36,15 +36,15 @@ public class CursoController {
 
     private final CursoService cursoService;
 
-    @Operation(summary = "Registra un nuevo curso o diplomado")
-    @ApiResponse(responseCode = "201", description = "Curso creado")
-    @ApiResponse(responseCode = "409", description = "Código duplicado o docente inactivo")
+    @Operation(summary = "Crea un nuevo curso o diplomado")
+    @ApiResponse(responseCode = "201", description = "Curso creado correctamente")
+    @ApiResponse(responseCode = "409", description = "El código ya existe o el docente está inactivo")
     @PostMapping
     public ResponseEntity<CursoResponseDTO> crear(@Valid @RequestBody CursoCreateDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(cursoService.crear(dto));
     }
 
-    @Operation(summary = "Lista cursos con filtros combinables, paginación y ordenamiento")
+    @Operation(summary = "Consulta cursos con filtros combinables, paginación y ordenamiento")
     @GetMapping
     public Page<CursoResponseDTO> listar(
             @RequestParam(required = false) String nombre,
@@ -56,28 +56,28 @@ public class CursoController {
         return cursoService.listar(nombre, tipo, categoriaId, modalidadId, estado, pageable);
     }
 
-    @Operation(summary = "Obtiene un curso por id")
+    @Operation(summary = "Busca un curso por su identificador")
     @GetMapping("/{id}")
     public CursoResponseDTO obtenerPorId(@PathVariable Long id) {
         return cursoService.obtenerPorId(id);
     }
 
-    @Operation(summary = "Actualiza un curso existente (incluye reasignación de docentes)")
+    @Operation(summary = "Modifica un curso existente (permite reasignar docentes)")
     @PutMapping("/{id}")
     public CursoResponseDTO actualizar(@PathVariable Long id,
                                        @Valid @RequestBody CursoUpdateDTO dto) {
         return cursoService.actualizar(id, dto);
     }
 
-    @Operation(summary = "Cambia el estado del curso (máquina de estados: PROGRAMADO → EN_CURSO → FINALIZADO/CANCELADO)")
-    @ApiResponse(responseCode = "400", description = "Transición de estado no permitida")
+    @Operation(summary = "Actualiza el estado del curso (flujo: PROGRAMADO → EN_CURSO → FINALIZADO/CANCELADO)")
+    @ApiResponse(responseCode = "400", description = "La transición de estado solicitada no está permitida")
     @PatchMapping("/{id}/estado/{estado}")
     public CursoResponseDTO cambiarEstado(@PathVariable Long id, @PathVariable EstadoCurso estado) {
         return cursoService.cambiarEstado(id, estado);
     }
 
-    @Operation(summary = "Desactiva un curso (soft delete: conserva historial de inscripciones)")
-    @ApiResponse(responseCode = "204", description = "Curso desactivado")
+    @Operation(summary = "Desactiva un curso (borrado lógico: se conserva el historial de inscripciones)")
+    @ApiResponse(responseCode = "204", description = "Curso desactivado correctamente")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         cursoService.eliminar(id);
