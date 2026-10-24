@@ -12,7 +12,7 @@ import java.util.Optional;
 
 public interface EspacioRepository extends JpaRepository<Espacio, Long>, JpaSpecificationExecutor<Espacio> {
     boolean existsByCodigoIgnoreCase(String codigo);
-
+    /** Valida código duplicado al actualizar, ignorando el propio espacio. */
     boolean existsByCodigoIgnoreCaseAndIdNot(String codigo, Long id);
 
     /** Espacios ofrecidos para alquiler (catálogo público). */
