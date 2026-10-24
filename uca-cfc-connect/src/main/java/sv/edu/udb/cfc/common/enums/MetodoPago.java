@@ -4,6 +4,7 @@ package sv.edu.udb.cfc.common.enums;
  * Catálogo fijo de métodos de pago aceptados por el sistema
  * (Módulo de Pagos). Al ser un catálogo cerrado y de bajo cambio,
  * se modela como enum en lugar de una entidad/tabla independiente.
+ * <p><b>Nota:</b> el módulo de pagos usa su propio enum en payment.enums.
  */
 public enum MetodoPago {
     EFECTIVO,
