@@ -9,6 +9,14 @@ import sv.edu.udb.cfc.venue.enums.TipoEspacio;
 
 import java.math.BigDecimal;
 
+/**
+ * Datos para registrar un espacio. El {@code codigo} debe ser único
+ * (si ya existe, el servicio responde 409).
+ *
+ * @param precioHora  tarifa por hora; puede ser 0 (espacio sin costo). El costo
+ *                    de cada reserva se calcula a partir de este valor
+ * @param disponible  opcional; si no se envía, el servicio define el valor por defecto
+ */
 public record EspacioCreateDTO(
         @NotBlank(message = "El código es obligatorio")
         @Size(max = 20) String codigo,
