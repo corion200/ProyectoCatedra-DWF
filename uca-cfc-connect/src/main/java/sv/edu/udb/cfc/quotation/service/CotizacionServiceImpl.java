@@ -26,7 +26,18 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
+/**
+ * Implementa las reglas de negocio de las cotizaciones:
+ * <ul>
+ *   <li>El cliente debe existir y estar activo.</li>
+ *   <li>El código se genera como COT-AÑO-NÚMERO (ej. COT-2026-00001).</li>
+ *   <li>No se puede editar una cotización APROBADA o RECHAZADA.</li>
+ *   <li>El cambio de estado se valida contra un mapa de transiciones permitidas.</li>
+ *   <li>No se puede eliminar una cotización APROBADA o EN_PROCESO; las demás se borran físicamente.</li>
+ *   <li>El listado combina filtros opcionales (cliente, tipo, estado) con paginación.</li>
+ * </ul>
+ * Las lecturas son de solo lectura y las escrituras abren su propia transacción.
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
