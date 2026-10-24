@@ -12,19 +12,30 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
+// Datos para registrar un servicio de catering
 public record CateringCreateDTO(
-        @NotNull(message = "El cliente es obligatorio") Long clienteId,
+        // Cliente que pide el servicio
+        @NotNull(message = "Falta indicar el cliente") Long clienteId,
+        // Cotización relacionada (opcional)
         Long cotizacionId,
+        // Tipo de servicio: coffee break, almuerzo, etc.
         TipoServicioCatering tipoServicio,
-        @NotNull(message = "El número de asistentes es obligatorio")
+        // Cantidad de personas
+        @NotNull(message = "Falta indicar el número de asistentes")
         @Positive(message = "Debe haber al menos 1 asistente") Integer numeroAsistentes,
-        @NotBlank(message = "El menú es obligatorio")
-        @Size(max = 1000, message = "El menú no puede exceder 1000 caracteres") String menu,
-        @NotNull(message = "La fecha del evento es obligatoria")
-        @FutureOrPresent(message = "La fecha del evento no puede ser en el pasado") LocalDate fechaEvento,
+        // Descripción del menú
+        @NotBlank(message = "Falta indicar el menú")
+        @Size(max = 1000, message = "El menú no puede pasar de 1000 caracteres") String menu,
+        // Día del evento
+        @NotNull(message = "Falta indicar la fecha del evento")
+        @FutureOrPresent(message = "La fecha del evento no puede estar en el pasado") LocalDate fechaEvento,
+        // Hora en que se entrega la comida
         LocalTime horaEntrega,
+        // Sitio de la entrega
         @Size(max = 255) String lugar,
-        @NotNull(message = "El precio por persona es obligatorio")
+        // Precio de cada persona
+        @NotNull(message = "Falta indicar el precio por persona")
         @PositiveOrZero(message = "El precio no puede ser negativo") BigDecimal precioPorPersona,
+        // Notas extra (opcional)
         @Size(max = 500) String observaciones) {
 }
