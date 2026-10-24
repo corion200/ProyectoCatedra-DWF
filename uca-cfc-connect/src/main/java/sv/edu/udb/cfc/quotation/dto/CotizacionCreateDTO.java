@@ -9,7 +9,12 @@ import sv.edu.udb.cfc.quotation.enums.TipoCotizacion;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-
+/**
+ * Datos para registrar una cotización. Validaciones: cliente, tipo, descripción
+ * (máx. 1000 caracteres) y monto estimado (no negativo) son obligatorios; la fecha
+ * del evento es opcional pero, si se envía, debe ser futura. El estado no se envía:
+ * toda cotización nace en PENDIENTE.
+ */
 public record CotizacionCreateDTO(
         @NotNull(message = "El cliente es obligatorio") Long clienteId,
 
