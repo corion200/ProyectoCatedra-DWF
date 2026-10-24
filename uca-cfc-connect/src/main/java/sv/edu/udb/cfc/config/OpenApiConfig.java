@@ -1,3 +1,4 @@
+
 package sv.edu.udb.cfc.config;
 
 import io.swagger.v3.oas.models.Components;
@@ -14,6 +15,9 @@ public class OpenApiConfig {
 
     private static final String SCHEME = "bearerAuth";
 
+    /**
+     * Configura la documentación de la API y el acceso mediante JWT.
+     */
     @Bean
     public OpenAPI cfcOpenAPI() {
         return new OpenAPI()
@@ -31,4 +35,3 @@ public class OpenApiConfig {
                                 .bearerFormat("JWT")));
     }
 }
-
