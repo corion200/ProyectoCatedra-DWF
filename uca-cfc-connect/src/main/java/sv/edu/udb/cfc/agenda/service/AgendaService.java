@@ -19,12 +19,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-/**
- * Módulo 7 — Agenda Institucional (RF13): consolida TODAS las actividades
- * del centro en una fecha (cursos en curso, alquileres y catering).
- * La regla del enunciado "no podrán existir conflictos de horario" ya la
- * garantiza el anti-solapamiento del módulo de alquileres.
- */
+// Servicio que junta las actividades del centro en una fecha
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -34,35 +29,41 @@ public class AgendaService {
     private final AlquilerRepository alquilerRepository;
     private final CateringServicioRepository cateringRepository;
 
+    // Arma la agenda completa de un día
     public List<AgendaItemDTO> obtenerAgenda(LocalDate fecha) {
         List<AgendaItemDTO> items = new ArrayList<>();
 
-        Specification<Curso> spec = (root, query, cb) -> {
-            List<Predicate> p = new ArrayList<>();
-            p.add(cb.lessThanOrEqualTo(root.get("fechaInicio"), fecha));
-            p.add(cb.greaterThanOrEqualTo(root.get("fechaFin"), fecha));
-            p.add(cb.isTrue(root.get("activo")));
-            p.add(cb.notEqual(root.get("estado"), EstadoCurso.CANCELADO));
-            return cb.and(p.toArray(new Predicate[0]));
+        // Filtro de cursos activos que cubren la fecha
+        Specification<Curso> filtroCursos = (root, query, cb) -> {
+            List<Predicate> condiciones = new ArrayList<>();
+            condiciones.add(cb.lessThanOrEqualTo(root.get("fechaInicio"), fecha));
+            condiciones.add(cb.greaterThanOrEqualTo(root.get("fechaFin"), fecha));
+            condiciones.add(cb.isTrue(root.get("activo")));
+            condiciones.add(cb.notEqual(root.get("estado"), EstadoCurso.CANCELADO));
+            return cb.and(condiciones.toArray(new Predicate[0]));
         };
-        cursoRepository.findAll(spec).forEach(c -> items.add(new AgendaItemDTO(
+
+        // Agrega los cursos
+        cursoRepository.findAll(filtroCursos).forEach(c -> items.add(new AgendaItemDTO(
                 c.getTipo().name(), c.getNombre(), fecha, null, null,
                 "Modalidad: " + c.getModalidad().getNombre(), c.getEstado().name())));
 
+        // Agrega los alquileres no cancelados
         alquilerRepository.findByFechaEventoAndEstadoNot(fecha, EstadoAlquiler.CANCELADA)
                 .forEach(a -> items.add(new AgendaItemDTO(
                         "ALQUILER", a.getEspacio().getNombre() + " — " + a.getCliente().getNombre(),
                         fecha, a.getHoraInicio(), a.getHoraFin(),
                         a.getEspacio().getNombre(), a.getEstado().name())));
 
+        // Agrega los servicios de catering no cancelados
         cateringRepository.findByFechaEventoAndEstadoNot(fecha, EstadoCatering.CANCELADO)
                 .forEach(c -> items.add(new AgendaItemDTO(
                         "CATERING", c.getTipoServicio().name() + " — " + c.getCliente().getNombre(),
                         fecha, c.getHoraEntrega(), null, c.getLugar(), c.getEstado().name())));
 
+        // Ordena por hora, los que no tienen hora van al final
         items.sort(Comparator.comparing(AgendaItemDTO::horaInicio,
                 Comparator.nullsLast(Comparator.naturalOrder())));
         return items;
     }
 }
-
