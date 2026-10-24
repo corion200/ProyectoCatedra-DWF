@@ -28,12 +28,21 @@ import sv.edu.udb.cfc.venue.service.EspacioService;
 
 import java.util.List;
 
+
+/**
+ * Controlador REST para la gestión de espacios disponibles para alquiler
+ * (auditorios, salas y laboratorios).
+ * Expone operaciones de registro, consulta con filtros, actualización y
+ * desactivación. La lógica de negocio se delega en {@link EspacioService}.
+ */
+
 @Tag(name = "Espacios", description = "Auditorios, salas y laboratorios disponibles para alquiler")
 @RestController
 @RequestMapping("/api/v1/espacios")
 @RequiredArgsConstructor
 public class EspacioController {
 
+    /** Servicio con la lógica de negocio de los espacios. */
     private final EspacioService espacioService;
 
     @Operation(summary = "Registra un nuevo espacio")
@@ -55,11 +64,13 @@ public class EspacioController {
         return espacioService.listar(nombre, tipo, capacidadMinima, disponible, pageable);
     }
 
+
     @Operation(summary = "Catálogo público: espacios activos y disponibles")
     @GetMapping("/disponibles")
     public List<EspacioResponseDTO> listarDisponibles() {
         return espacioService.listarDisponibles();
     }
+
 
     @Operation(summary = "Obtiene un espacio por id")
     @GetMapping("/{id}")
