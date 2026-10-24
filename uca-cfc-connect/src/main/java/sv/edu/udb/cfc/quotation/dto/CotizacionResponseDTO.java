@@ -6,7 +6,11 @@ import sv.edu.udb.cfc.quotation.enums.TipoCotizacion;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-
+/**
+ * Respuesta que se devuelve al cliente de la API. Incluye el id y código generado,
+ * el id y nombre del cliente, y el estado actual. El método {@code from} convierte la
+ * entidad {@code Cotizacion} a este DTO para no exponer la entidad directamente.
+ */
 public record CotizacionResponseDTO(
         Long id, String codigo, Long clienteId, String clienteNombre,
         TipoCotizacion tipo, String descripcion, EstadoCotizacion estado,
