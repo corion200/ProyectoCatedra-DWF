@@ -50,12 +50,12 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html",
                                 "/v3/api-docs/**", "/api-docs/**").permitAll()
 
-                        // 🟢 Catálogos y Cursos: Lectura pública (GET) para clientes y visitantes
+                        //  Catálogos y Cursos: Lectura pública (GET) para clientes y visitantes
                         .requestMatchers(HttpMethod.GET, "/api/v1/cursos/**", "/api/v1/categorias/**",
                                 "/api/v1/modalidades/**", "/api/v1/docentes/**",
                                 "/api/v1/espacios/**").permitAll()
 
-                        // 🔴 Catálogos: Solo ADMIN puede escribir (POST, PUT, DELETE)
+                        //  Catálogos: Solo ADMIN puede escribir (POST, PUT, DELETE)
                         .requestMatchers(HttpMethod.POST, "/api/v1/cursos/**", "/api/v1/categorias/**",
                                 "/api/v1/modalidades/**", "/api/v1/docentes/**",
                                 "/api/v1/espacios/**").hasRole("ADMIN")
