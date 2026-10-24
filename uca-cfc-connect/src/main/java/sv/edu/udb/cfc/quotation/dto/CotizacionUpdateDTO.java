@@ -9,8 +9,10 @@ import sv.edu.udb.cfc.quotation.enums.TipoCotizacion;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-
-/** El estado se cambia por PATCH /{id}/estado/{estado}, no por aquí. */
+/**
+ * Datos para editar una cotización (mismas validaciones que al crear).
+ * El estado NO se cambia por aquí, sino con PATCH {@code /{id}/estado/{estado}}.
+ */
 public record CotizacionUpdateDTO(
         @NotNull(message = "El cliente es obligatorio") Long clienteId,
         @NotNull(message = "El tipo de cotización es obligatorio") TipoCotizacion tipo,
