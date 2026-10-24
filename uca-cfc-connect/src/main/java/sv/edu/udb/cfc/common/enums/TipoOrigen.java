@@ -7,6 +7,7 @@ package sv.edu.udb.cfc.common.enums;
  * <p>
  * Permite que entidades como {@code Pago} o {@code Cotizacion} referencien
  * un origen polimórfico sin necesidad de una FK distinta por módulo.
+ * <p><b>Nota:</b> no está referenciado todavía por ninguna entidad.
  */
 public enum TipoOrigen {
     INSCRIPCION,
