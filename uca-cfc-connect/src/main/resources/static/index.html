@@ -85,6 +85,23 @@
         .separador{margin:18px 0;border:none;border-top:1px solid var(--borde)}
         .ayuda{font-size:12px;color:#6a748c;background:#f4f6fb;border-radius:8px;padding:10px 12px;line-height:1.6;margin-top:14px}
         .nota-rol{font-size:12px;color:#8a6d00;background:#fff8e6;border-radius:6px;padding:6px 10px;margin-top:6px}
+
+        .selector{position:relative}
+        .resultados{display:none;position:absolute;z-index:60;top:100%;left:0;right:0;margin-top:2px;background:#fff;
+            border:1.5px solid var(--borde);border-radius:8px;box-shadow:0 12px 28px rgba(20,30,70,.18);
+            max-height:230px;overflow:auto}
+        .resultados.abierto{display:block}
+        .res{padding:9px 12px;font-size:13px;cursor:pointer;border-top:1px solid #f0f2f7}
+        .res:first-child{border-top:none}
+        .res:hover{background:#f4f6fc}
+        .res.vacia{color:#8a93ab;font-style:italic;cursor:default}
+        input.filtro{background:#f6f8fe;margin-bottom:8px}
+
+        /* Barra de filtros estilo dashboard: búsqueda + desplegables (retro de la docente) */
+        .fila-filtros{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+        .fila-filtros .filtro{flex:1;min-width:200px;margin:5px 0}
+        .filtroSel{width:auto;min-width:140px;flex:0 0 auto;margin:5px 0;font-size:13px;padding:9px 10px;
+            color:#3d4761;font-weight:600;cursor:pointer}
     </style>
 </head>
 <body>
@@ -111,7 +128,9 @@
 
 <!-- ═══════════ MODAL: CAMBIAR CONTRASEÑA ═══════════ -->
 <div id="modalPass" class="modal-fondo hidden">
-    <div class="modal">
+    <div class="modal" style="position:relative">
+        <button id="btnXPassword" type="button" title="Cerrar sin cambios"
+                style="position:absolute;top:10px;right:12px;border:none;background:none;font-size:22px;line-height:1;cursor:pointer;color:#8a93ab;">&times;</button>
         <h2 style="color:var(--azul);margin-top:0">🔐 Cambiar contraseña</h2>
         <p id="modalPassAviso" style="font-size:13px;color:#6a748c"></p>
         <div class="banner" id="bannerPass"></div>
@@ -130,6 +149,8 @@
         <button class="tab-btn" data-vista="cursos" onclick="tab('cursos',this)">📖 Cursos</button>
         <button class="tab-btn" data-vista="clientes" onclick="tab('clientes',this)">👥 Clientes</button>
         <button class="tab-btn" data-vista="inscripciones" onclick="tab('inscripciones',this)">✏️ Inscripciones</button>
+        <button class="tab-btn" data-vista="espacios" onclick="tab('espacios',this)">🏟️ Espacios</button>
+        <button class="tab-btn" data-vista="catering" onclick="tab('catering',this)">🍽️ Catering</button>
         <button class="tab-btn" data-vista="pagos" onclick="tab('pagos',this)">💰 Pagos</button>
         <button class="tab-btn" data-vista="usuarios" onclick="tab('usuarios',this)">🔑 Usuarios</button>
         <button class="tab-btn" data-vista="catalogos" onclick="tab('catalogos',this)">🗂️ Catálogos</button>
@@ -148,8 +169,13 @@
 
         <div id="cursos" class="card hidden">
             <h2>📖 Oferta académica</h2>
+            <div class="fila-filtros">
+                <input id="filtroCursos" class="filtro" placeholder="🔎 Buscar curso: código, nombre…" oninput="filtrarTabla('filtroCursos','cursosTabla')">
+                <select id="filtroCurTipo" class="filtroSel" data-tabla="cursosTabla" data-col="2" data-todos="Todos los tipos" onchange="filtrarTabla('filtroCursos','cursosTabla')"></select>
+                <select id="filtroCurEstado" class="filtroSel" data-tabla="cursosTabla" data-col="6" data-todos="Todos los estados" data-opciones="RESERVADO,CONFIRMADO,EN PREPARACION,COMPLETADO,CANCELADO" onchange="filtrarTabla('filtroCursos','cursosTabla')"></select>
+            </div>
             <div id="cursosTabla"></div>
-            <div id="formCrearCurso">
+            <div id="formCrearCurso" data-rol="ADMIN">
                 <hr class="separador">
                 <h2>Crear nuevo curso / diplomado</h2>
                 <div class="grid2">
@@ -182,6 +208,11 @@
 
         <div id="clientes" class="card hidden">
             <h2>👥 Clientes registrados</h2>
+            <div class="fila-filtros">
+                <input id="filtroClientes" class="filtro" placeholder="🔎 Buscar cliente: nombre, DUI, correo…" oninput="filtrarTabla('filtroClientes','clientesTabla')">
+                <select id="filtroCliTipo" class="filtroSel" data-tabla="clientesTabla" data-col="1" data-todos="Todos los tipos" onchange="filtrarTabla('filtroClientes','clientesTabla')"></select>
+                <select id="filtroCliEstado" class="filtroSel" data-tabla="clientesTabla" data-col="6" data-todos="Todos los estados" data-opciones="Activo,Inactivo" onchange="filtrarTabla('filtroClientes','clientesTabla')"></select>
+            </div>
             <div id="clientesTabla"></div>
             <hr class="separador">
             <h2>Registrar nuevo cliente</h2>
@@ -206,17 +237,111 @@
         <div id="inscripciones" class="card hidden">
             <h2>✏️ Nueva inscripción</h2>
             <label>Cliente</label>
-            <select id="insCliente"><option value="">Cargando…</option></select>
+            <input type="hidden" id="insCliente">
             <label>Curso (solo PROGRAMADOS)</label>
-            <select id="insCurso"><option value="">Cargando…</option></select>
+            <input type="hidden" id="insCurso">
             <button class="primario" onclick="crearInscripcion()">Inscribir</button>
             <div id="insTabla" style="margin-top:16px"></div>
+        </div>
+
+        <div id="espacios" class="card hidden">
+            <h2>🏟️ Espacios disponibles</h2>
+            <div class="fila-filtros">
+                <input id="filtroEspacios" class="filtro" placeholder="🔎 Buscar espacio: código, nombre…" oninput="filtrarTabla('filtroEspacios','espaciosTabla')">
+                <select id="filtroEspTipo" class="filtroSel" data-tabla="espaciosTabla" data-col="2" data-todos="Todos los tipos" onchange="filtrarTabla('filtroEspacios','espaciosTabla')"></select>
+                <select id="filtroEspEstado" class="filtroSel" data-tabla="espaciosTabla" data-col="5" data-todos="Todos los estados" data-opciones="Activo,Inactivo" onchange="filtrarTabla('filtroEspacios','espaciosTabla')"></select>
+            </div>
+            <div id="espaciosTabla"></div>
+            <div id="formCrearEspacio" data-rol="ADMIN">
+                <hr class="separador">
+                <h2>Registrar nuevo espacio</h2>
+                <div class="grid2">
+                    <div><label>Código (ej: SAL-101)</label><input id="espCodigo" placeholder="SAL-XXX"></div>
+                    <div><label>Nombre</label><input id="espNombre"></div>
+                </div>
+                <div class="grid2">
+                    <div><label>Tipo de espacio</label>
+                        <select id="espTipo">
+                            <option value="AUDITORIO">Auditorio</option>
+                            <option value="SALA">Sala de capacitación</option>
+                            <option value="LABORATORIO">Laboratorio</option>
+                            <option value="TALLER">Taller</option>
+                            <option value="CANCHA">Cancha</option>
+                            <option value="OTRO">Otro</option>
+                        </select>
+                    </div>
+                    <div><label>Capacidad (personas)</label><input id="espCapacidad" type="number" min="1"></div>
+                </div>
+                <div class="grid2">
+                    <div><label>Costo por hora ($)</label><input id="espCostoHora" type="number" step="0.01" min="0"></div>
+                    <div></div>
+                </div>
+                <button class="primario" onclick="crearEspacio()">Crear espacio</button>
+            </div>
+            <hr class="separador">
+            <h2>📅 Reservar espacio (alquiler)</h2>
+            <div class="grid2">
+                <div><label>Espacio</label><input type="hidden" id="alqEspacio"></div>
+                <div><label>Cliente</label><input type="hidden" id="alqCliente"></div>
+            </div>
+            <div class="grid2">
+                <div><label>Fecha</label><input id="alqFecha" type="date"></div>
+                <div><label>Observaciones (opcional)</label><input id="alqObs"></div>
+            </div>
+            <div class="grid2">
+                <div><label>Hora inicio</label><input id="alqInicio" type="time"></div>
+                <div><label>Hora fin</label><input id="alqFin" type="time"></div>
+            </div>
+            <button class="primario" onclick="crearAlquiler()">Reservar</button>
+            <p class="ayuda">El costo se calcula automáticamente (horas × costo del espacio) y el backend rechaza reservas que se solapan para el mismo espacio.</p>
+            <hr class="separador">
+            <h2>📋 Reservas registradas</h2>
+            <div class="fila-filtros">
+                <input id="filtroAlquileres" class="filtro" placeholder="🔎 Buscar reserva: espacio, cliente, fecha…" oninput="filtrarTabla('filtroAlquileres','alquileresTabla')">
+                <select id="filtroAlqEstado" class="filtroSel" data-tabla="alquileresTabla" data-col="5" data-todos="Todos los estados" data-opciones="RESERVADO,CONFIRMADO,FINALIZADO,CANCELADO" onchange="filtrarTabla('filtroAlquileres','alquileresTabla')"></select>
+            </div>
+            <div id="alquileresTabla"></div>
+        </div>
+
+        <div id="catering" class="card hidden">
+            <h2>🍽️ Servicios de catering</h2>
+            <div class="fila-filtros">
+                <input id="filtroCatering" class="filtro" placeholder="🔎 Buscar catering: cliente, fecha…" oninput="filtrarTabla('filtroCatering','cateringTabla')">
+                <select id="filtroCatEstado" class="filtroSel" data-tabla="cateringTabla" data-col="6" data-todos="Todos los estados" data-opciones="RESERVADO,CONFIRMADO,EN PREPARACION,COMPLETADO,CANCELADO" onchange="filtrarTabla('filtroCatering','cateringTabla')"></select>
+            </div>
+            <div id="cateringTabla"></div>
+            <hr class="separador">
+            <h2>➕ Contratar catering</h2>
+            <div class="grid2">
+                <div><label>Cliente</label><input type="hidden" id="catCliente"></div>
+                <div><label>Fecha del evento</label><input id="catFecha" type="date"></div>
+            </div>
+            <div class="grid2">
+                <div><label>Número de asistentes</label><input id="catAsistentes" type="number" min="1"></div>
+                <div><label>Precio por persona ($)</label><input id="catPrecio" type="number" step="0.01" min="0"></div>
+                <label style="display:block">Tipo de servicio
+                    <select id="catTipo" style="width:100%;padding:8px;margin-top:4px">
+                        <option value="COFFEE_BREAK">Coffee break</option>
+                        <option value="ALMUERZO">Almuerzo</option>
+                    </select>
+                </label>
+                <label style="display:block">Hora de entrega
+                    <input type="time" id="catHora" value="12:00" style="width:100%;padding:8px;margin-top:4px">
+                </label>
+                <label style="display:block">Lugar del evento
+                    <input type="text" id="catLugar" maxlength="255" placeholder="Ej. Auditorio principal, Campus UDB" style="width:100%;padding:8px;margin-top:4px">
+                </label>
+            </div>
+            <label>Menú / descripción</label><input id="catMenu">
+            <label>Observaciones</label><input id="catObs">
+            <button class="primario" onclick="crearCatering()">Contratar catering</button>
+            <p class="ayuda">El total lo calcula el backend (precio × asistentes); nunca se envía desde el cliente.</p>
         </div>
 
         <div id="pagos" class="card hidden">
             <h2>💰 Control de pagos (RF10, RF15)</h2>
             <div class="grid2">
-                <div><label>Inscripción</label><select id="pagIns"><option value="">Cargando…</option></select></div>
+                <div><label>Inscripción</label><input type="hidden" id="pagIns"></div>
                 <div><label>Monto ($)</label><input id="pagMonto" type="number" step="0.01" min="0.01"></div>
             </div>
             <label>Método</label>
@@ -224,11 +349,10 @@
             <button class="primario" onclick="registrarPago()">Registrar pago</button>
             <hr class="separador">
             <button class="primario" onclick="verSaldo()">Consultar saldo de la inscripción seleccionada</button>
-            <div id="saldoBox" style="margin-top:10px">
-                <hr class="separador">
-                <h2>📋 Pagos de esta inscripción (validación de caja)</h2>
-                <div id="pagosTabla"></div>
-            </div>
+            <div id="saldoBox" style="margin-top:10px"></div>
+            <hr class="separador">
+            <h2>📋 Pagos de esta inscripción (validación de caja)</h2>
+            <div id="pagosTabla"></div>
         </div>
 
         <div id="usuarios" class="card hidden">
@@ -286,246 +410,6 @@
     </main>
 </div>
 
-        <div id="pagos" class="card hidden">
-            <h2>💰 Control de pagos (RF10, RF15)</h2>
-            <div class="grid2">
-                <div><label>ID inscripción</label><input id="pagIns" type="number"></div>
-                <div><label>Monto</label><input id="pagMonto" type="number" step="0.01"></div>
-            </div>
-            <label>Método</label>
-            <select id="pagMetodo"><option>EFECTIVO</option><option>TARJETA</option><option>TRANSFERENCIA</option><option>DEPOSITO</option></select>
-            <button class="primario" onclick="registrarPago()">Registrar pago</button>
-            <hr class="separador">
-            <button class="primario" onclick="verSaldo()">Consultar saldo</button>
-            <div id="saldoBox" style="margin-top:10px"></div>
-        </div>
-
-        <div id="usuarios" class="card hidden">
-            <h2>🔑 Gestión de usuarios</h2>
-            <div id="usuariosTabla"></div>
-            <hr class="separador">
-            <h2>Crear nuevo usuario (cuenta de acceso)</h2>
-            <label>Nombre completo</label><input id="usuNombre">
-            <label>Correo</label><input id="usuCorreo" type="email">
-            <label>Rol</label>
-            <select id="usuRol">
-                <option>CLIENTE</option><option>RECEPCIONISTA</option><option>CONTABILIDAD</option><option>ADMIN</option>
-            </select>
-            <div id="notaRolSoloCliente" class="nota-rol hidden">Como RECEPCIONISTA solo puedes crear cuentas de rol CLIENTE.</div>
-            <button class="primario" onclick="crearUsuario()">Crear usuario y generar contraseña temporal</button>
-            <div id="temporalBox" class="temporal-box hidden"></div>
-        </div>
-    </main>
-</div>
-
-<script>
-    const API = '/api/v1';
-    let TOKEN = localStorage.getItem('cfcToken'),
-        ROL   = localStorage.getItem('cfcRol'),
-        USER  = localStorage.getItem('cfcUser');
-
-    /** Matriz de permisos por rol (espejo de SecurityConfig + enunciado de roles). */
-    const PERMISOS = {
-        ADMIN:         ['agenda','cursos','clientes','inscripciones','pagos','usuarios'],
-        RECEPCIONISTA: ['agenda','cursos','clientes','inscripciones','usuarios'],
-        CONTABILIDAD:  ['cursos','pagos'],
-        CLIENTE:       ['cursos']
-    };
-    const PESTANA_INICIAL = { ADMIN:'agenda', RECEPCIONISTA:'agenda', CONTABILIDAD:'pagos', CLIENTE:'cursos' };
-
-    async function api(ruta, metodo='GET', cuerpo=null){
-        const r = await fetch(API+ruta, { method:metodo,
-            headers:{ 'Content-Type':'application/json', ...(TOKEN?{Authorization:'Bearer '+TOKEN}:{}) },
-            body: cuerpo ? JSON.stringify(cuerpo) : null });
-        if (r.ok) return r.status===204 ? null : r.json();
-        if (r.status === 403) throw { status:403, message:'Tu rol ('+ROL+') no tiene permiso para esta operación.' };
-        if (r.status === 401) throw { status:401, message:'Sesión no válida o expirada. Inicia sesión de nuevo.' };
-        let msg = 'Error del servidor ('+r.status+')';
-        try { const e = await r.json();
-            msg = e.message + (e.detalles ? ' — '+Object.entries(e.detalles).map(([k,v])=>k+': '+v).join(' · ') : '');
-        } catch(_) {}
-        throw { status:r.status, message:msg };
-    }
-    function banner(txt,tipo){ const b=document.getElementById('banner'); b.className='banner '+tipo; b.textContent=txt; }
-    function bannerLogin(txt,tipo){ const b=document.getElementById('bannerLogin'); b.className='banner '+tipo; b.textContent=txt; }
-    function bannerPass(txt,tipo){ const b=document.getElementById('bannerPass'); b.className='banner '+tipo; b.textContent=txt; }
-
-    async function login(){
-        try{
-            const t = await api('/auth/login','POST',{ correo:logCorreo.value.trim(), password:logPass.value });
-            setSesion(t);
-        }catch(e){ bannerLogin(e.status===401?'Correo o contraseña incorrectos.':e.message,'err'); }
-    }
-    function setSesion(t){
-        TOKEN=t.token; ROL=t.rol; USER=t.correo;
-        localStorage.setItem('cfcToken',TOKEN); localStorage.setItem('cfcRol',ROL); localStorage.setItem('cfcUser',USER);
-        if (t.debeCambiarPassword) { abrirCambioPass(true); return; }   // ⭐ cambio obligatorio
-        iniciarApp();
-    }
-    function logout(){ localStorage.clear(); location.reload(); }
-
-    function abrirCambioPass(obligatoria=false){
-        modalPass.classList.remove('hidden');
-        bannerPass('','');
-        modalPassAviso.textContent = obligatoria
-            ? 'Tu cuenta tiene una contraseña TEMPORAL generada por el sistema. Por seguridad debes establecer una nueva antes de continuar.'
-            : 'Establece una nueva contraseña para tu cuenta.';
-    }
-    async function guardarPassword(){
-        if (passNueva.value !== passNueva2.value) { bannerPass('Las nuevas contraseñas no coinciden.','err'); return; }
-        try{
-            await api('/auth/cambiar-password','PATCH',
-                { passwordActual:passActual.value, passwordNueva:passNueva.value });
-            modalPass.classList.add('hidden');
-            localStorage.clear(); TOKEN=ROL=USER=null;
-            bannerLogin('✅ Contraseña actualizada. Inicia sesión con tu nueva contraseña.','ok');
-            logPass.value='';
-        }catch(e){ bannerPass(e.message,'err'); }
-    }
-    async function olvidePass(){
-        try{
-            const r = await api('/auth/recuperar?correo='+encodeURIComponent(logCorreo.value.trim()),'POST');
-            bannerLogin('🔑 Contraseña temporal generada: '+r.contrasenaTemporal+' — úsela para entrar y deberá cambiarla.','ok');
-        }catch(e){ bannerLogin(e.message,'err'); }
-    }
-
-    function iniciarApp(){
-        vistaLogin.classList.add('hidden'); vistaApp.classList.remove('hidden');
-        sesionInfo.innerHTML = 'Sesión: <b>'+USER+'</b><span class="rol-badge">'+ROL+'</span>';
-        document.getElementById('agendaFecha').value = new Date().toISOString().slice(0,10);
-
-        const permitidas = PERMISOS[ROL] || [];
-        document.querySelectorAll('nav .tab-btn').forEach(b=>{
-            b.style.display = permitidas.includes(b.dataset.vista) ? '' : 'none';
-        });
-        if (ROL==='RECEPCIONISTA') notaRolSoloCliente.classList.remove('hidden');
-
-        const inicial = PESTANA_INICIAL[ROL] || 'cursos';
-        tab(inicial, document.querySelector('.tab-btn[data-vista="'+inicial+'"]'));
-        if (permitidas.includes('cursos')) cargarCursos();
-        if (permitidas.includes('usuarios')) cargarUsuarios();
-    }
-    function tab(id, btn){
-        document.querySelectorAll('nav .tab-btn').forEach(b=>b.classList.remove('activo'));
-        if (btn) btn.classList.add('activo');
-        ['agenda','cursos','clientes','inscripciones','pagos','usuarios']
-            .forEach(s=>document.getElementById(s).classList.toggle('hidden', s!==id));
-        if (id==='agenda' && !agendaTabla.innerHTML) cargarAgenda();
-        if (id==='clientes' && !clientesTabla.innerHTML) cargarClientes();
-        if (id==='usuarios' && !usuariosTabla.innerHTML) cargarUsuarios();
-    }
-
-    function spinner(cols){ return '<tr><td colspan="'+cols+'" class="cargando">Cargando</td></tr>'; }
-
-    async function cargarAgenda(){
-        try{
-            agendaTabla.innerHTML = '<table>'+spinner(5)+'</table>';
-            const items = await api('/agenda?fecha='+agendaFecha.value);
-            agendaTabla.innerHTML = items.length
-                ? '<table><thead><tr><th>Tipo</th><th>Actividad</th><th>Horario</th><th>Lugar</th><th>Estado</th></tr></thead><tbody>'
-                + items.map(i=>'<tr><td><b>'+i.tipo+'</b></td><td>'+i.titulo+'</td><td>'
-                    +(i.horaInicio||'todo el día')+(i.horaFin?' – '+i.horaFin:'')+'</td><td>'+i.lugar
-                    +'</td><td>'+i.estado+'</td></tr>').join('')+'</tbody></table>'
-                : '<p style="color:#6a748c">Sin actividades programadas para esta fecha.</p>';
-        }catch(e){ agendaTabla.innerHTML = '<p style="color:var(--err)">'+e.message+'</p>'; }
-    }
-    async function cargarCursos(){
-        try{
-            cursosTabla.innerHTML = '<table>'+spinner(7)+'</table>';
-            const pag = await api('/cursos?size=50');
-            cursosTabla.innerHTML = '<table><thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Precio</th><th>Cupo</th><th>Fechas</th><th>Estado</th></tr></thead><tbody>'
-                + pag.content.map(c=>'<tr><td><b>'+c.codigo+'</b></td><td>'+c.nombre+'</td><td>'+c.tipo+'</td><td>$'+c.precio
-                    +'</td><td>'+c.cupoMaximo+'</td><td>'+c.fechaInicio+' → '+c.fechaFin+'</td><td>'+c.estado+'</td></tr>').join('')+'</tbody></table>';
-        }catch(e){ cursosTabla.innerHTML = '<p style="color:var(--err)">'+e.message+'</p>'; }
-    }
-    async function cargarClientes(){
-        try{
-            clientesTabla.innerHTML = '<table>'+spinner(7)+'</table>';
-            const pag = await api('/clientes?size=50');
-            clientesTabla.innerHTML = pag.content.length
-                ? '<table><thead><tr><th>ID</th><th>Tipo</th><th>Nombre</th><th>DUI</th><th>Correo</th><th>Teléfono</th><th>Estado</th></tr></thead><tbody>'
-                + pag.content.map(c=>'<tr><td>'+c.id+'</td><td>'+c.tipoCliente+'</td><td>'+c.nombre+'</td><td>'
-                    +(c.dui||'—')+'</td><td>'+c.correo+'</td><td>'+c.telefono+'</td><td>'+(c.activo?'✅ Activo':'⛔ Inactivo')+'</td></tr>').join('')+'</tbody></table>'
-                : '<p style="color:#6a748c">Aún no hay clientes registrados.</p>';
-        }catch(e){ clientesTabla.innerHTML = '<p style="color:var(--err)">'+e.message+'</p>'; }
-    }
-    async function cargarUsuarios(){
-        try{
-            usuariosTabla.innerHTML = '<table>'+spinner(5)+'</table>';
-            const lista = await api('/usuarios');
-            usuariosTabla.innerHTML = '<table><thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Pendiente de cambio</th></tr></thead><tbody>'
-                + lista.map(u=>'<tr><td>'+u.nombre+'</td><td>'+u.correo+'</td><td><b>'+u.rol+'</b></td><td>'
-                    +(u.activo?'✅':'⛔')+'</td><td>'+(u.debeCambiarPassword?'🔑 Sí':'—')+'</td></tr>').join('')+'</tbody></table>';
-        }catch(e){ usuariosTabla.innerHTML = '<p style="color:var(--err)">'+e.message+'</p>'; }
-    }
-    function tipoCliente(){
-        const esEmpresa = cliTipo.value==='EMPRESA';
-        campoDui.classList.toggle('hidden', esEmpresa);
-        campoContacto.classList.toggle('hidden', !esEmpresa);
-    }
-    async function crearCliente(){
-        const esEmpresa = cliTipo.value==='EMPRESA';
-        try{
-            const c = await api('/clientes','POST',{ tipoCliente:cliTipo.value, nombre:cliNombre.value,
-                dui:esEmpresa?null:cliDui.value, nit:cliNit.value, correo:cliCorreo.value, telefono:cliTel.value,
-                contactoNombre:esEmpresa?cliContacto.value:null, direccion:cliDir.value });
-            banner('✅ Cliente creado: '+c.nombre+' (id '+c.id+')','ok');
-            clientesTabla.innerHTML=''; cargarClientes();
-        }catch(e){ banner('❌ '+e.message,'err'); }
-    }
-    async function crearUsuario(){
-        try{
-            const r = await api('/usuarios','POST',
-                { nombre:usuNombre.value.trim(), correo:usuCorreo.value.trim().toLowerCase(), rol:usuRol.value });
-            temporalBox.classList.remove('hidden');
-            temporalBox.innerHTML = '👤 <b>'+r.usuario.nombre+'</b> ('+r.usuario.correo+') creado con rol <b>'+r.usuario.rol
-                +'</b>.<br>🔑 Contraseña temporal: <code>'+ (r.contrasenaTemporal || '(ver consola del backend)') +'</code>'
-                +'<br><small>En producción se envía por email; el sistema obligará a cambiarla al primer inicio de sesión.</small>';
-            usuariosTabla.innerHTML=''; cargarUsuarios();
-        }catch(e){ temporalBox.classList.add('hidden'); banner('❌ '+e.message,'err'); }
-    }
-    async function crearInscripcion(){
-        try{
-            const i = await api('/inscripciones','POST',{ clienteId:+insCliente.value, cursoId:+insCurso.value });
-            banner('✅ Inscripción '+i.codigo+' registrada ('+i.clienteNombre+' → '+i.cursoNombre+', estado '+i.estado+')','ok');
-            insTabla.innerHTML=''; listarInscripciones();
-        }catch(e){ banner('❌ '+e.message,'err'); }
-    }
-    async function listarInscripciones(){
-        try{
-            const pag = await api('/inscripciones?size=20');
-            insTabla.innerHTML = '<table><thead><tr><th>Código</th><th>Cliente</th><th>Curso</th><th>Estado</th></tr></thead><tbody>'
-                + pag.content.map(i=>'<tr><td>'+i.codigo+'</td><td>'+i.clienteNombre+'</td><td>'+i.cursoNombre
-                    +'</td><td>'+i.estado+'</td></tr>').join('')+'</tbody></table>';
-        }catch(e){}
-    }
-    async function registrarPago(){
-        try{
-            const p = await api('/pagos','POST',{ inscripcionId:+pagIns.value, monto:+pagMonto.value, metodoPago:pagMetodo.value });
-            banner('✅ Pago '+p.codigo+' registrado por $'+p.monto+' ('+p.metodoPago+')','ok');
-        }catch(e){ banner('❌ '+e.message,'err'); }
-    }
-    /** Contador animado del saldo: de 0 al valor real en ~700ms. */
-    function animarSaldo(elemento, valorFinal){
-        const objetivo = parseFloat(valorFinal), inicio = performance.now(), dur = 700;
-        function paso(ahora){
-            const progreso = Math.min((ahora-inicio)/dur, 1);
-            const facil = 1 - Math.pow(1-progreso, 3);   // easeOutCubic
-            elemento.textContent = '$' + (objetivo*facil).toFixed(2);
-            if (progreso < 1) requestAnimationFrame(paso);
-        }
-        requestAnimationFrame(paso);
-    }
-    async function verSaldo(){
-        try{
-            const r = await api('/pagos/resumen/inscripcion/'+pagIns.value);
-            saldoBox.innerHTML = '<p>Curso: <b>$'+r.precioCurso+'</b> · Pagado: <b>$'+r.totalPagado+'</b><br>'
-                +'Saldo pendiente: <span class="saldo" id="saldoNum">$0.00</span></p>';
-            animarSaldo(document.getElementById('saldoNum'), r.saldoPendiente);
-        }catch(e){ saldoBox.innerHTML = '<p style="color:var(--err)">'+e.message+'</p>'; }
-    }
-
-    if (TOKEN) iniciarApp();
-</script>
+<script src="js/app.js"></script>
 </body>
 </html>
