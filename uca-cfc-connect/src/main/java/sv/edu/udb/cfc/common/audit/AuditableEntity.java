@@ -19,6 +19,8 @@ import java.time.LocalDateTime;
  * (ver {@code UcaCfcConnectApplication}).
  * <p>
  * Uso: {@code public class Curso extends AuditableEntity { ... }}
+ * <p><b>Nota:</b> actualmente ninguna entidad la extiende y no hay
+ * @EnableJpaAuditing activo; queda disponible para adoptarse.
  */
 @Getter
 @Setter
