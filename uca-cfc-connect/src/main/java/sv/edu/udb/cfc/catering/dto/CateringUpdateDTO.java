@@ -12,15 +12,15 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-/** El servicio recalcula costoTotal si cambian asistentes o precio. */
+// Si cambian asistentes o precio, se recalcula el costo total
 public record CateringUpdateDTO(
-        @NotNull(message = "El tipo de servicio es obligatorio") TipoServicioCatering tipoServicio,
-        @NotNull @Positive(message = "Debe haber al menos 1 asistente") Integer numeroAsistentes,
-        @NotBlank(message = "El menú es obligatorio") @Size(max = 1000) String menu,
-        @NotNull(message = "La fecha del evento es obligatoria")
-        @FutureOrPresent(message = "La fecha del evento no puede ser en el pasado") LocalDate fechaEvento,
-        @NotNull(message = "La hora de entrega es obligatoria") LocalTime horaEntrega,
-        @NotBlank(message = "El lugar de entrega es obligatorio") @Size(max = 255) String lugar,
-        @NotNull @PositiveOrZero(message = "El precio no puede ser negativo") BigDecimal precioPorPersona,
-        @Size(max = 500) String observaciones) {
+        @NotNull(message = "Falta indicar el tipo de servicio") TipoServicioCatering tipoServicio, // Tipo de servicio
+        @NotNull @Positive(message = "Debe haber al menos 1 asistente") Integer numeroAsistentes, // Cantidad de personas
+        @NotBlank(message = "Falta indicar el menú") @Size(max = 1000) String menu, // Descripción del menú
+        @NotNull(message = "Falta indicar la fecha del evento")
+        @FutureOrPresent(message = "La fecha del evento no puede estar en el pasado") LocalDate fechaEvento, // Día del evento
+        @NotNull(message = "Falta indicar la hora de entrega") LocalTime horaEntrega, // Hora de entrega
+        @NotBlank(message = "Falta indicar el lugar de entrega") @Size(max = 255) String lugar, // Sitio de entrega
+        @NotNull @PositiveOrZero(message = "El precio no puede ser negativo") BigDecimal precioPorPersona, // Precio por persona
+        @Size(max = 500) String observaciones) { // Notas extra
 }
