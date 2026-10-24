@@ -7,8 +7,8 @@ import sv.edu.udb.cfc.academic.entity.Curso;
 import java.util.Optional;
 
 /**
- * JpaSpecificationExecutor habilita filtros dinámicos combinables
- * (nombre + tipo + categoría + estado...) vía Specifications en el servicio.
+ * Con JpaSpecificationExecutor se pueden armar filtros dinámicos y combinables
+ * (nombre, tipo, categoría, estado...) mediante Specifications desde el servicio.
  */
 public interface CursoRepository extends JpaRepository<Curso, Long>, JpaSpecificationExecutor<Curso> {
 
@@ -18,9 +18,9 @@ public interface CursoRepository extends JpaRepository<Curso, Long>, JpaSpecific
 
     Optional<Curso> findByCodigoIgnoreCase(String codigo);
 
-    /** Cuenta cursos que usan una categoría — evita eliminar categorías en uso. */
+    /** Devuelve cuántos cursos usan la categoría indicada; sirve para impedir borrar categorías en uso. */
     long countByCategoriaId(Long categoriaId);
 
-    /** Cuenta cursos que usan una modalidad — evita eliminar modalidades en uso. */
+    /** Devuelve cuántos cursos usan la modalidad indicada; sirve para impedir borrar modalidades en uso. */
     long countByModalidadId(Long modalidadId);
 }

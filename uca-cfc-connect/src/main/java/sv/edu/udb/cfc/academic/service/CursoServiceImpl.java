@@ -42,7 +42,7 @@ public class CursoServiceImpl implements CursoService {
     private final ModalidadRepository modalidadRepository;
     private final DocenteRepository docenteRepository;
 
-    /** Transiciones permitidas: los estados terminales (FINALIZADO, CANCELADO) no tienen salida. */
+    /** Cambios de estado permitidos: desde FINALIZADO y CANCELADO ya no se puede pasar a otro estado. */
     private static final Map<EstadoCurso, Set<EstadoCurso>> TRANSICIONES_VALIDAS = Map.of(
             EstadoCurso.PROGRAMADO, EnumSet.of(EstadoCurso.EN_CURSO, EstadoCurso.CANCELADO),
             EstadoCurso.EN_CURSO, EnumSet.of(EstadoCurso.FINALIZADO, EstadoCurso.CANCELADO),
@@ -69,7 +69,7 @@ public class CursoServiceImpl implements CursoService {
                 .fechaInicio(dto.fechaInicio())
                 .fechaFin(dto.fechaFin())
                 .docentes(cargarDocentes(dto.docentesIds()))
-                .build();   // estado nace en PROGRAMADO (@Builder.Default)
+                .build();   // el estado inicia en PROGRAMADO (por @Builder.Default)
         return CursoResponseDTO.from(cursoRepository.save(curso));
     }
 
@@ -92,7 +92,7 @@ public class CursoServiceImpl implements CursoService {
         curso.setCupoMaximo(dto.cupoMaximo());
         curso.setFechaInicio(dto.fechaInicio());
         curso.setFechaFin(dto.fechaFin());
-        // Reemplazo completo de la relación N:M con docentes
+        // Se sustituye por completo la relación N:M con los docentes
         curso.getDocentes().clear();
         curso.getDocentes().addAll(cargarDocentes(dto.docentesIds()));
         if (dto.activo() != null) {
@@ -133,13 +133,13 @@ public class CursoServiceImpl implements CursoService {
     @Override
     @Transactional
     public void eliminar(Long id) {
-        // Soft delete: las inscripciones y pagos históricos deben conservar su referencia al curso
+        // Borrado lógico: las inscripciones y pagos históricos deben seguir apuntando al curso
         buscarEntidad(id).setActivo(false);
     }
 
-    // ─────────────── helpers ───────────────
+    // ─────────────── métodos auxiliares ───────────────
 
-    /** Specification con filtros dinámicos combinables (solo agrega condiciones de los presentes). */
+    /** Arma una Specification con filtros dinámicos combinables (solo agrega las condiciones que vienen con valor). */
     private Specification<Curso> conFiltros(String nombre, TipoOferta tipo,
                                             Long categoriaId, Long modalidadId, EstadoCurso estado) {
         return (root, query, cb) -> {
@@ -160,7 +160,7 @@ public class CursoServiceImpl implements CursoService {
             if (estado != null) {
                 condiciones.add(cb.equal(root.get("estado"), estado));
             }
-            condiciones.add(cb.isTrue(root.get("activo")));   // siempre ocultar eliminados
+            condiciones.add(cb.isTrue(root.get("activo")));   // excluye siempre los cursos eliminados
             return cb.and(condiciones.toArray(new Predicate[0]));
         };
     }
@@ -180,7 +180,7 @@ public class CursoServiceImpl implements CursoService {
                 .orElseThrow(() -> new ResourceNotFoundException("Modalidad", id));
     }
 
-    /** Carga los docentes por id y verifica que existan TODOS y estén activos. */
+    /** Busca los docentes por id y comprueba que existan TODOS y que estén activos. */
     private Set<Docente> cargarDocentes(Set<Long> ids) {
         Set<Docente> docentes = new HashSet<>(docenteRepository.findAllById(ids));
         if (docentes.size() != ids.size()) {
