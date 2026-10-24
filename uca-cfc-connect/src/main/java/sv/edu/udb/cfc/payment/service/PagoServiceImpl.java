@@ -66,6 +66,11 @@ public class PagoServiceImpl implements PagoService {
                 .observaciones(dto.observaciones())
                 .fechaPago(LocalDateTime.now());
 
+        // REGLA: el monto debe ser positivo
+        if (dto.monto() == null || dto.monto().signum() <= 0) {
+            throw new BusinessException("El monto del pago debe ser mayor a cero", HttpStatus.BAD_REQUEST);
+        }
+
         // REGLA: exactamente UNA referencia de las 4 (coherente con CHECK ck_pago_documento)
         int referencias = contarReferencias(dto);
         if (referencias == 0) {
@@ -78,7 +83,7 @@ public class PagoServiceImpl implements PagoService {
         }
 
         if (dto.inscripcionId() != null) {
-            builder.inscripcion(validarInscripcionPagable(dto.inscripcionId()));
+            builder.inscripcion(aplicarReglasPagoInscripcion(dto.inscripcionId(), dto.monto()));
         } else if (dto.cotizacionId() != null) {
             builder.cotizacion(validarCotizacionPagable(dto.cotizacionId()));
         } else if (dto.alquilerId() != null) {
@@ -144,15 +149,37 @@ public class PagoServiceImpl implements PagoService {
 
     // ─────────────── validaciones del documento destino ───────────────
 
-    /** REGLA: no se paga una inscripción CANCELADA (PENDIENTE/CONFIRMADA/FINALIZADA sí). */
-    private Inscripcion validarInscripcionPagable(Long id) {
+    /** REGLAS sobre la inscripción destino: no se paga una CANCELADA, no se paga
+     *  más que el saldo pendiente y, si el pago cubre el saldo total, la
+     *  inscripción pasa automáticamente a PAGADA. */
+    private Inscripcion aplicarReglasPagoInscripcion(Long id, BigDecimal monto) {
         Inscripcion inscripcion = inscripcionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Inscripción", id));
         if (inscripcion.getEstado() == EstadoInscripcion.CANCELADA) {
             throw new BusinessException("No se pueden registrar pagos sobre una inscripción CANCELADA",
                     HttpStatus.BAD_REQUEST);
         }
+        BigDecimal saldo = saldoPendienteInscripcion(inscripcion);
+        if (monto.compareTo(saldo) > 0) {
+            throw new BusinessException("El pago ($" + monto + ") excede el saldo pendiente ($"
+                    + saldo + ") de la inscripción " + inscripcion.getCodigo(), HttpStatus.BAD_REQUEST);
+        }
+        // REGLA: si con este pago el saldo llega a $0, la inscripción se marca PAGADA
+        if (saldo.subtract(monto).signum() <= 0
+                && inscripcion.getEstado() != EstadoInscripcion.PAGADA
+                && inscripcion.getEstado() != EstadoInscripcion.FINALIZADA
+                && inscripcion.getEstado() != EstadoInscripcion.CANCELADA) {
+            inscripcion.setEstado(EstadoInscripcion.PAGADA);
+            inscripcionRepository.save(inscripcion);
+        }
         return inscripcion;
+    }
+
+    /** Saldo pendiente de la inscripción = precio del curso − abonos (PARCIAL/PAGADO). */
+    private BigDecimal saldoPendienteInscripcion(Inscripcion inscripcion) {
+        BigDecimal precio = inscripcion.getCurso().getPrecio();
+        BigDecimal pagado = pagoRepository.sumarMontosPorInscripcion(inscripcion.getId(), ESTADOS_APLICABLES);
+        return precio.subtract(pagado).max(BigDecimal.ZERO);
     }
 
     /** REGLA: no se paga una cotización RECHAZADA (un anticipo sobre PENDIENTE/EN_PROCESO es válido). */
