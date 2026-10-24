@@ -29,6 +29,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+// Lógica de negocio de catering. Por defecto todo es solo lectura,
+// los métodos que modifican datos llevan su propio @Transactional
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -41,6 +43,7 @@ public class CateringServiceImpl implements CateringService {
     @Override
     @Transactional
     public CateringResponseDTO crear(CateringCreateDTO dto) {
+        // se validan cliente y cotización antes de armar el objeto
         Cliente cliente = validarClienteActivo(dto.clienteId());
         Cotizacion cotizacion = validarCotizacionOrigen(dto.cotizacionId());
 
@@ -65,6 +68,7 @@ public class CateringServiceImpl implements CateringService {
     @Transactional
     public CateringResponseDTO actualizar(Long id, CateringUpdateDTO dto) {
         CateringServicio catering = buscarEntidad(id);
+        // un catering cancelado o finalizado ya no se toca
         if (catering.getEstado() == EstadoCatering.CANCELADO
                 || catering.getEstado() == EstadoCatering.FINALIZADO) {
             throw new BusinessException("No se puede editar un catering en estado " + catering.getEstado(),
@@ -79,9 +83,11 @@ public class CateringServiceImpl implements CateringService {
         catering.setPrecioPorPersona(dto.precioPorPersona());
         // REGLA: el costo SIEMPRE se recalcula si cambian precio o asistentes
         catering.setCostoTotal(calcularCosto(dto.precioPorPersona(), dto.numeroAsistentes()));
+        // si no mandan observaciones se deja la que ya tenía
         if (dto.observaciones() != null) {
             catering.setObservaciones(dto.observaciones());
         }
+        // no hace falta save(), al estar dentro de la transacción Hibernate guarda el cambio
         return CateringResponseDTO.from(catering);
     }
 
@@ -97,6 +103,7 @@ public class CateringServiceImpl implements CateringService {
                 .map(CateringResponseDTO::from);
     }
 
+    // PENDIENTE -> CONFIRMADO
     @Override
     @Transactional
     public CateringResponseDTO confirmar(Long id) {
@@ -109,6 +116,7 @@ public class CateringServiceImpl implements CateringService {
         return CateringResponseDTO.from(catering);
     }
 
+    // CONFIRMADO -> FINALIZADO
     @Override
     @Transactional
     public CateringResponseDTO finalizar(Long id) {
@@ -121,6 +129,7 @@ public class CateringServiceImpl implements CateringService {
         return CateringResponseDTO.from(catering);
     }
 
+    // se puede cancelar desde PENDIENTE o CONFIRMADO
     @Override
     @Transactional
     public CateringResponseDTO cancelar(Long id, String motivo) {
@@ -131,11 +140,14 @@ public class CateringServiceImpl implements CateringService {
                     HttpStatus.BAD_REQUEST);
         }
         catering.setEstado(EstadoCatering.CANCELADO);
+        // el motivo se guarda en observaciones (reemplaza lo que había)
         if (motivo != null && !motivo.isBlank()) {
             catering.setObservaciones(motivo);
         }
         return CateringResponseDTO.from(catering);
     }
+
+    // solo se borran los PENDIENTES, el resto se cancela para no perder historial
     @Override
     @Transactional
     public void eliminar(Long id) {
@@ -149,14 +161,15 @@ public class CateringServiceImpl implements CateringService {
 
     // ─────────────── helpers ───────────────
 
-    /** costoTotal = precioPorPersona × numeroAsistentes, a 2 decimales. */
+    // costoTotal = precioPorPersona × numeroAsistentes, a 2 decimales
     private BigDecimal calcularCosto(BigDecimal precioPorPersona, Integer numeroAsistentes) {
         return precioPorPersona.multiply(BigDecimal.valueOf(numeroAsistentes))
                 .setScale(2, RoundingMode.HALF_UP);
     }
 
-    /** REGLA: si proviene de cotización, debe estar APROBADA y ser de tipo CATERING. */
+    // REGLA: si proviene de cotización, debe estar APROBADA y ser de tipo CATERING
     private Cotizacion validarCotizacionOrigen(Long cotizacionId) {
+        // la cotización es opcional
         if (cotizacionId == null) {
             return null;
         }
@@ -173,6 +186,7 @@ public class CateringServiceImpl implements CateringService {
         return cotizacion;
     }
 
+    // el cliente tiene que existir y estar activo
     private Cliente validarClienteActivo(Long clienteId) {
         Cliente cliente = clienteRepository.findById(clienteId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente", clienteId));
@@ -182,6 +196,7 @@ public class CateringServiceImpl implements CateringService {
         return cliente;
     }
 
+    // arma el filtro dinámico, solo agrega las condiciones que vengan con valor
     private Specification<CateringServicio> conFiltros(Long clienteId, EstadoCatering estado,
                                                        LocalDate fecha) {
         return (root, query, cb) -> {
@@ -199,7 +214,8 @@ public class CateringServiceImpl implements CateringService {
         };
     }
 
-    /** TODO(producción): secuencia de BD para evitar colisiones concurrentes. */
+    // genera CAT-AÑO-00001 usando el count de la tabla
+    // TODO(producción): secuencia de BD para evitar colisiones concurrentes
     private String generarCodigo() {
         return String.format("CAT-%d-%05d", LocalDate.now().getYear(),
                 cateringRepository.count() + 1);
