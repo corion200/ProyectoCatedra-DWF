@@ -30,64 +30,78 @@ import sv.edu.udb.cfc.catering.service.CateringService;
 
 import java.time.LocalDate;
 
-@Tag(name = "Catering", description = "Servicios de alimentación: coffee break, almuerzos, banquetes")
+// Controlador de los servicios de catering
+@Tag(name = "Catering", description = "Servicios de comida: coffee break, almuerzos y banquetes")
 @RestController
 @RequestMapping("/api/v1/caterings")
 @RequiredArgsConstructor
 public class CateringController {
 
+    // Servicio con la lógica de catering
     private final CateringService cateringService;
 
-    @Operation(summary = "Registra un servicio (calcula costoTotal = precio × asistentes)")
-    @ApiResponse(responseCode = "201", description = "Servicio registrado (queda PENDIENTE)")
+    // Registra un servicio nuevo
+    @Operation(summary = "Registrar un servicio (costoTotal = precio × asistentes)")
+    @ApiResponse(responseCode = "201", description = "Servicio registrado, queda PENDIENTE")
     @PostMapping
     public ResponseEntity<CateringResponseDTO> crear(@Valid @RequestBody CateringCreateDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(cateringService.crear(dto));
     }
 
-    @Operation(summary = "Lista servicios con filtros combinables y paginación")
+    // Lista los servicios con filtros opcionales
+    @Operation(summary = "Listar servicios con filtros y paginación")
     @GetMapping
     public Page<CateringResponseDTO> listar(
+            // Filtro por cliente
             @RequestParam(required = false) Long clienteId,
+            // Filtro por estado
             @RequestParam(required = false) EstadoCatering estado,
+            // Filtro por fecha (yyyy-MM-dd)
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha,
+            // Paginación, por defecto 10 por página ordenados por fecha
             @PageableDefault(size = 10, sort = "fechaEvento", direction = Sort.Direction.ASC) Pageable pageable) {
         return cateringService.listar(clienteId, estado, fecha, pageable);
     }
 
-    @Operation(summary = "Obtiene un servicio por id")
+    // Busca un servicio por su id
+    @Operation(summary = "Buscar un servicio por id")
     @GetMapping("/{id}")
     public CateringResponseDTO obtenerPorId(@PathVariable Long id) {
         return cateringService.obtenerPorId(id);
     }
 
-    @Operation(summary = "Actualiza un servicio (recalcula el costo total)")
+    // Actualiza un servicio existente
+    @Operation(summary = "Actualizar un servicio (vuelve a calcular el costo total)")
     @PutMapping("/{id}")
     public CateringResponseDTO actualizar(@PathVariable Long id,
                                           @Valid @RequestBody CateringUpdateDTO dto) {
         return cateringService.actualizar(id, dto);
     }
 
-    @Operation(summary = "Confirma un servicio PENDIENTE")
+    // Pasa un servicio de PENDIENTE a CONFIRMADO
+    @Operation(summary = "Confirmar un servicio PENDIENTE")
     @PatchMapping("/{id}/confirmar")
     public CateringResponseDTO confirmar(@PathVariable Long id) {
         return cateringService.confirmar(id);
     }
 
-    @Operation(summary = "Finaliza un servicio CONFIRMADO (entrega realizada)")
+    // Marca como finalizado un servicio CONFIRMADO
+    @Operation(summary = "Finalizar un servicio CONFIRMADO (ya se entregó)")
     @PatchMapping("/{id}/finalizar")
     public CateringResponseDTO finalizar(@PathVariable Long id) {
         return cateringService.finalizar(id);
     }
 
-    @Operation(summary = "Cancela un servicio activo")
+    // Cancela un servicio, el motivo es opcional
+    @Operation(summary = "Cancelar un servicio activo")
     @PatchMapping("/{id}/cancelar")
     public CateringResponseDTO cancelar(@PathVariable Long id,
                                         @RequestParam(required = false) String motivo) {
         return cateringService.cancelar(id, motivo);
     }
 
-    @Operation(summary = "Elimina un servicio (solo PENDIENTES)")
+    // Borra un servicio, solo si está PENDIENTE
+    @Operation(summary = "Eliminar un servicio (solo los PENDIENTES)")
     @ApiResponse(responseCode = "204", description = "Servicio eliminado")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
