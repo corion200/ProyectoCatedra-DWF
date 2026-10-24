@@ -27,7 +27,19 @@ import sv.edu.udb.cfc.quotation.dto.CotizacionUpdateDTO;
 import sv.edu.udb.cfc.quotation.enums.EstadoCotizacion;
 import sv.edu.udb.cfc.quotation.enums.TipoCotizacion;
 import sv.edu.udb.cfc.quotation.service.CotizacionService;
-
+/**
+ * Controlador REST del módulo de Cotizaciones. Ruta base: {@code /api/v1/cotizaciones}.
+ * <ul>
+ *   <li>POST {@code /} crea una cotización (responde 201).</li>
+ *   <li>GET {@code /} lista con filtros opcionales (clienteId, tipo, estado) y paginación
+ *       (10 por página, las más recientes primero).</li>
+ *   <li>GET {@code /{id}} obtiene una cotización.</li>
+ *   <li>PUT {@code /{id}} actualiza los datos (no el estado).</li>
+ *   <li>PATCH {@code /{id}/estado/{estado}} cambia el estado respetando el flujo permitido.</li>
+ *   <li>DELETE {@code /{id}} elimina (responde 204).</li>
+ * </ul>
+ * Solo recibe y responde; las reglas de negocio viven en {@code CotizacionService}.
+ */
 @Tag(name = "Cotizaciones", description = "Cotizaciones empresariales: cursos, diplomados, alquileres y catering")
 @RestController
 @RequestMapping("/api/v1/cotizaciones")
