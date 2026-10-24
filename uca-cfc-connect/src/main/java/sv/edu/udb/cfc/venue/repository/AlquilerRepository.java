@@ -15,8 +15,8 @@ public interface AlquilerRepository extends JpaRepository<Alquiler, Long>, JpaSp
     boolean existsByCodigoIgnoreCase(String codigo);
 
     /**
-     * Reservas ACTIVAS de un espacio en una fecha → base para detectar
-     * solapamiento de horarios (se valida en el servicio comparando horas).
+     * Reservas de todos los espacios en una fecha, excluyendo las que tienen
+     * el estado indicado (por ejemplo CANCELADA).
      */
     List<Alquiler> findByFechaEventoAndEstadoNot(LocalDate fechaEvento, EstadoAlquiler estado);
 
