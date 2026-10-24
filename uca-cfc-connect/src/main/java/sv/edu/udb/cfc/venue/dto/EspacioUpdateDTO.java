@@ -9,6 +9,7 @@ import sv.edu.udb.cfc.venue.enums.TipoEspacio;
 
 import java.math.BigDecimal;
 
+/** Datos para actualizar un espacio (PUT: se envían todos los campos obligatorios). */
 public record EspacioUpdateDTO(
         @NotBlank @Size(max = 20) String codigo,
         @NotBlank @Size(max = 150) String nombre,
