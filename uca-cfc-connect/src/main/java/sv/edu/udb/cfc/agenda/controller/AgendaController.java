@@ -1,3 +1,4 @@
+
 package sv.edu.udb.cfc.agenda.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,23 +15,49 @@ import sv.edu.udb.cfc.agenda.service.AgendaService;
 import java.time.LocalDate;
 import java.util.List;
 
-// Controlador de la agenda del centro
-@Tag(name = "Agenda Institucional (Módulo 7)", description = "Agenda del centro con cursos, alquileres y catering de un día")
+/**
+ * Controlador REST encargado de consultar la agenda institucional
+ * del Centro de Formación Continua.
+ * Permite obtener las actividades programadas para una fecha específica,
+ * incluyendo cursos, alquileres de espacios y servicios de catering.
+ */
+@Tag(
+        name = "Agenda Institucional (Módulo 7)",
+        description = "Endpoints para consultar las actividades diarias del centro, "
+                + "incluyendo cursos, alquileres y servicios de catering."
+)
 @RestController
 @RequestMapping("/api/v1/agenda")
 @RequiredArgsConstructor
 public class AgendaController {
 
-    // Servicio que arma la agenda
+    /**
+     * Servicio encargado de consultar y organizar las actividades
+     * correspondientes a la fecha solicitada.
+     */
     private final AgendaService agendaService;
 
-    // Devuelve las actividades de un día ordenadas por hora
-    @Operation(summary = "Ver la agenda de un día, ordenada por hora")
+    /**
+     * Obtiene las actividades programadas para un día determinado,
+     * ordenadas por hora de inicio.
+     *
+     * @param fecha fecha de consulta en formato ISO (yyyy-MM-dd)
+     * @return lista de actividades registradas para la fecha indicada
+     */
+    @Operation(
+            summary = "Consultar la agenda institucional por fecha",
+            description = "Devuelve los cursos, alquileres de espacios y servicios "
+                    + "de catering programados para la fecha indicada. "
+                    + "Las actividades se presentan ordenadas por hora de inicio; "
+                    + "las que no tienen una hora definida aparecen al final."
+    )
     @GetMapping
     public List<AgendaItemDTO> obtenerAgenda(
-            // Fecha a consultar (formato yyyy-MM-dd)
-            @RequestParam("fecha") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
-        // Pide los datos al servicio
+            @RequestParam("fecha")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate fecha) {
+
+        // Delega la consulta y organización de las actividades al servicio.
         return agendaService.obtenerAgenda(fecha);
     }
 }
